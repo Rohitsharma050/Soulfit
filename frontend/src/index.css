@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: 'DM Sans', Manrope, system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    background-color: #FBF9F5;
+    color: #1E2C24;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    font-feature-settings: "lnum" 1;
+  }
+
+  img, picture, svg, video {
+    display: block;
+    max-width: 100%;
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+
+  /* Accessible Focus States */
+  :focus-visible {
+    outline: 2px solid #C87D55;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* Selection Style */
+  ::selection {
+    background-color: rgba(200, 125, 85, 0.25);
+    color: #1E2C24;
+  }
+}
+
+/* Accessibility: Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
