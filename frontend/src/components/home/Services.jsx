@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -11,12 +11,14 @@ import {
   Building2, 
   Apple,
   Clock,
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2
 } from 'lucide-react';
 import Container from '../common/Container';
 import SectionHeading from '../common/SectionHeading';
 import Button from '../common/Button';
 import { servicesConfig } from '../../config/servicesConfig';
+import { servicesService } from '../../services/api';
 
 const iconMap = {
   Activity,
@@ -26,10 +28,60 @@ const iconMap = {
   Apple,
 };
 
-export default function Services() {
-  const [selectedServiceId, setSelectedServiceId] = useState(servicesConfig[0].id);
+// Normalizes API service payload with fallback properties
+function normalizeService(s) {
+  return {
+    id: s.id || s.slug,
+    slug: s.slug,
+    name: s.name || s.title?.split('—')[0] || s.title,
+    title: s.title,
+    category: s.category,
+    shortDescription: s.short_description || s.shortDescription,
+    detailedDescription: s.description || s.detailedDescription || s.short_description,
+    badge: s.badge || `Pillar 0${s.display_order || 1}`,
+    iconName: s.icon_name || s.iconName || 'Activity',
+    path: `/services/${s.slug}`,
+    displayOrder: s.display_order || s.displayOrder || 1,
+    image: s.image_url || s.image,
+    offerings: Array.isArray(s.offerings) ? s.offerings : (s.offerings ? JSON.parse(s.offerings) : []),
+    principle: s.principle || 'Rest is not a luxury; it is the biological foundation that makes vitality possible.',
+    sampleDailyInsight: s.sampleDailyInsight || {
+      timing: 'Daily Practice',
+      practice: 'Cultivate intentional breath and awareness during key transitions.',
+    },
+  };
+}
 
-  const activeService = servicesConfig.find((s) => s.id === selectedServiceId) || servicesConfig[0];
+export default function Services() {
+  const [services, setServices] = useState(servicesConfig);
+  const [selectedSlug, setSelectedSlug] = useState(servicesConfig[0].slug);
+  const [loading, setLoading] = useState(true);
+  const [isFromApi, setIsFromApi] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchServices() {
+      setLoading(true);
+      const res = await servicesService.getAll();
+      if (isMounted) {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const normalized = res.data.map(normalizeService);
+          setServices(normalized);
+          setSelectedSlug(normalized[0].slug);
+          setIsFromApi(true);
+        } else {
+          // Gracefully retain local configuration
+          setServices(servicesConfig);
+          setIsFromApi(false);
+        }
+        setLoading(false);
+      }
+    }
+    fetchServices();
+    return () => { isMounted = false; };
+  }, []);
+
+  const activeService = services.find((s) => s.slug === selectedSlug) || services[0];
   const ActiveIcon = iconMap[activeService.iconName] || Activity;
 
   return (
@@ -46,15 +98,15 @@ export default function Services() {
 
         {/* Interactive Pillar Switcher Pills (All 5 Pillars) */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-12 p-1.5 bg-sand rounded-full border border-beige max-w-4xl mx-auto shadow-soft">
-          {servicesConfig.map((service) => {
-            const isSelected = service.id === selectedServiceId;
+          {services.map((service) => {
+            const isSelected = service.slug === selectedSlug;
             const IconComponent = iconMap[service.iconName] || Activity;
 
             return (
               <button
-                key={service.id}
+                key={service.slug}
                 type="button"
-                onClick={() => setSelectedServiceId(service.id)}
+                onClick={() => setSelectedSlug(service.slug)}
                 className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-normal focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta ${
                   isSelected
                     ? 'bg-forest text-sand-light shadow-md'
@@ -72,7 +124,7 @@ export default function Services() {
         {/* Selected Service Detail Interactive Showcase */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeService.id}
+            key={activeService.slug}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
@@ -86,6 +138,12 @@ export default function Services() {
                   <span className="px-3 py-1 rounded-full text-xs font-semibold bg-terracotta/10 text-terracotta uppercase tracking-wider">
                     {activeService.badge} &bull; {activeService.category}
                   </span>
+                  {isFromApi && (
+                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-mono">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                      Live PostgreSQL
+                    </span>
+                  )}
                 </div>
 
                 <h3 className="font-serif text-3xl sm:text-4xl text-forest font-normal leading-tight">
@@ -107,19 +165,21 @@ export default function Services() {
                 </div>
 
                 {/* Offerings List */}
-                <div className="space-y-3 pt-2">
-                  <h4 className="text-xs uppercase tracking-widest text-olive font-semibold">
-                    Core Offerings &amp; Focus Areas:
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {activeService.offerings.map((offering, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-xs text-forest/85">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-terracotta flex-shrink-0 mt-0.5" />
-                        <span>{offering}</span>
-                      </div>
-                    ))}
+                {activeService.offerings && activeService.offerings.length > 0 && (
+                  <div className="space-y-3 pt-2">
+                    <h4 className="text-xs uppercase tracking-widest text-olive font-semibold">
+                      Core Offerings &amp; Focus Areas:
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {activeService.offerings.map((offering, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-xs text-forest/85">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-terracotta flex-shrink-0 mt-0.5" />
+                          <span>{offering}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="pt-6 border-t border-beige/60 flex flex-wrap items-center gap-4">

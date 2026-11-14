@@ -37,12 +37,11 @@ export default function Contact() {
     const res = await contactService.submitMessage(formData);
     if (res.success) {
       setStatus('success');
-      setFeedback('Your message has been received. Our guidance team will respond within 24–48 business hours.');
+      setFeedback(res.message || 'Your inquiry has been received. Our guidance team will connect with you within 24 to 48 hours.');
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
     } else {
-      // Graceful fallback display
-      setStatus('success');
-      setFeedback('Thank you for connecting with The Harmony Project. Your message has been noted for our guidance team.');
+      setStatus('error');
+      setFeedback(res.error || 'Unable to submit inquiry message. Please try again later.');
     }
   };
 

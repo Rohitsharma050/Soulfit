@@ -1,24 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import Container from '../components/common/Container';
 import Button from '../components/common/Button';
 import ConsultationCTA from '../components/home/ConsultationCTA';
 import { servicesConfig } from '../config/servicesConfig';
-import { CheckCircle2, ArrowRight, ArrowLeft, Clock, Sparkles } from 'lucide-react';
+import { servicesService } from '../services/api';
+import { CheckCircle2, ArrowRight, ArrowLeft, Clock } from 'lucide-react';
 
 export default function ServiceDetail({ forcedSlug }) {
   const { slug } = useParams();
   const currentSlug = forcedSlug || slug;
 
-  const service = servicesConfig.find(
+  const localFallback = servicesConfig.find(
     (s) => s.slug === currentSlug || s.id === currentSlug
   );
 
-  if (!service) {
+  const [service, setService] = useState(localFallback);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadService() {
+      if (currentSlug) {
+        const res = await servicesService.getBySlug(currentSlug);
+        if (isMounted && res.success && res.data) {
+          const s = res.data;
+          setService({
+            id: s.id,
+            slug: s.slug,
+            name: s.title?.split('—')[0] || s.title,
+            title: s.title,
+            category: s.category,
+            detailedDescription: s.description || s.short_description,
+            shortDescription: s.short_description,
+            badge: `Pillar 0${s.display_order || 1}`,
+            image: s.image_url || localFallback?.image,
+            offerings: Array.isArray(s.offerings) ? s.offerings : (s.offerings ? JSON.parse(s.offerings) : localFallback?.offerings || []),
+            principle: localFallback?.principle || 'Rest is an unbroken circle of self, space, and conscious fuel.',
+            sampleDailyInsight: localFallback?.sampleDailyInsight,
+          });
+        }
+      }
+    }
+    loadService();
+    return () => { isMounted = false; };
+  }, [currentSlug]);
+
+  if (!service && !localFallback) {
     return <Navigate to="/services" replace />;
   }
 
-  const otherServices = servicesConfig.filter((s) => s.id !== service.id);
+  const currentService = service || localFallback;
+  const otherServices = servicesConfig.filter((s) => s.slug !== currentSlug && s.id !== currentSlug);
 
   return (
     <div className="py-12 md:py-20 space-y-16">
@@ -37,66 +69,70 @@ export default function ServiceDetail({ forcedSlug }) {
         {/* Hero Section of the Service */}
         <div className="space-y-6 max-w-3xl">
           <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-terracotta/10 text-terracotta uppercase tracking-wider">
-            {service.badge} &bull; {service.category}
+            {currentService.badge} &bull; {currentService.category}
           </span>
 
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl text-forest font-normal leading-tight">
-            {service.name}
+            {currentService.name}
           </h1>
 
           <p className="text-xl font-serif italic text-terracotta">
-            {service.title}
+            {currentService.title}
           </p>
 
           <p className="text-base sm:text-lg text-olive font-light leading-relaxed">
-            {service.detailedDescription}
+            {currentService.detailedDescription}
           </p>
         </div>
 
         {/* Feature Image Banner */}
         <div className="my-10 rounded-2xl overflow-hidden aspect-[16/9] shadow-elevated border border-beige bg-sand-50">
           <img
-            src={service.image}
-            alt={service.name}
+            src={currentService.image}
+            alt={currentService.name}
             className="w-full h-full object-cover"
           />
         </div>
 
         {/* Guiding Principle Callout */}
-        <div className="p-8 rounded-2xl bg-sand-50 border border-beige shadow-soft my-10">
-          <span className="text-xs uppercase tracking-widest text-terracotta font-semibold block mb-2">
-            Sanctuary Core Principle
-          </span>
-          <blockquote className="font-serif italic text-2xl text-forest leading-relaxed">
-            “{service.principle}”
-          </blockquote>
-        </div>
+        {currentService.principle && (
+          <div className="p-8 rounded-2xl bg-sand-50 border border-beige shadow-soft my-10">
+            <span className="text-xs uppercase tracking-widest text-terracotta font-semibold block mb-2">
+              Sanctuary Core Principle
+            </span>
+            <blockquote className="font-serif italic text-2xl text-forest leading-relaxed">
+              “{currentService.principle}”
+            </blockquote>
+          </div>
+        )}
 
         {/* Offerings and Focus Areas Grid */}
-        <div className="space-y-6 pt-6">
-          <h2 className="font-serif text-3xl text-forest font-normal">
-            What We Address &amp; Guide:
-          </h2>
+        {currentService.offerings && currentService.offerings.length > 0 && (
+          <div className="space-y-6 pt-6">
+            <h2 className="font-serif text-3xl text-forest font-normal">
+              What We Address &amp; Guide:
+            </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            {service.offerings.map((offering, idx) => (
-              <div key={idx} className="p-5 rounded-xl bg-sand-50 border border-beige flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-terracotta flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-forest/90 font-light">{offering}</span>
-              </div>
-            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              {currentService.offerings.map((offering, idx) => (
+                <div key={idx} className="p-5 rounded-xl bg-sand-50 border border-beige flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-terracotta flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-forest/90 font-light">{offering}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Daily Healing Cycle if available */}
-        {service.sampleDailyInsight && (
+        {currentService.sampleDailyInsight && (
           <div className="p-6 rounded-2xl bg-beige/40 border border-beige-dark mt-10 space-y-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-terracotta uppercase tracking-wider">
               <Clock className="w-4 h-4 text-terracotta" />
-              <span>{service.sampleDailyInsight.timing}</span>
+              <span>{currentService.sampleDailyInsight.timing}</span>
             </div>
             <p className="text-sm text-forest/85 leading-relaxed font-light">
-              {service.sampleDailyInsight.practice}
+              {currentService.sampleDailyInsight.practice}
             </p>
           </div>
         )}
@@ -110,7 +146,7 @@ export default function ServiceDetail({ forcedSlug }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {otherServices.map((other) => (
               <Link
-                key={other.id}
+                key={other.id || other.slug}
                 to={other.path}
                 className="p-4 rounded-xl bg-sand-50 border border-beige hover:border-terracotta/40 hover:shadow-soft transition-all duration-normal group"
               >
@@ -118,7 +154,7 @@ export default function ServiceDetail({ forcedSlug }) {
                   {other.badge}
                 </span>
                 <span className="font-serif text-lg text-forest group-hover:text-terracotta transition-colors block">
-                  {other.name.split('—')[0].trim()}
+                  {other.name?.split('—')[0].trim() || other.title}
                 </span>
                 <span className="text-xs text-olive/75 line-clamp-2 mt-1 font-light">
                   {other.shortDescription}

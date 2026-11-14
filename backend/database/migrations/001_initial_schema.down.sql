@@ -1,0 +1,5 @@
+-- Rollback Migration 001
+DROP TABLE IF EXISTS consultations CASCADE;
+DROP TABLE IF EXISTS subscribers CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP FUNCTION IF EXISTS update_timestamp_column CASCADE;

@@ -1,22 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Container from '../components/common/Container';
 import SectionHeading from '../components/common/SectionHeading';
 import { journalConfig } from '../config/journalConfig';
-import { Clock, Search, BookOpen, ArrowRight } from 'lucide-react';
+import { articleService } from '../services/api';
+import { Clock, Search, BookOpen, Loader2 } from 'lucide-react';
 
 export default function Journal() {
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [articles, setArticles] = useState(journalConfig);
+  const [loading, setLoading] = useState(true);
+  const [isLiveFromDb, setIsLiveFromDb] = useState(false);
 
   const categories = ['ALL', 'SOULFIT & MIND', 'VASTU PRINCIPLES', 'FOOD AS MEDICINE'];
 
-  const filteredArticles = journalConfig.filter((article) => {
-    const matchesCategory = activeCategory === 'ALL' || article.category === activeCategory;
-    const matchesQuery = !searchQuery.trim() || 
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesQuery;
-  });
+  useEffect(() => {
+    let isMounted = true;
+    async function loadArticles() {
+      setLoading(true);
+      const params = {};
+      if (activeCategory !== 'ALL') {
+        params.category = activeCategory;
+      }
+      if (searchQuery.trim()) {
+        params.search = searchQuery.trim();
+      }
+
+      const res = await articleService.getAll(params);
+      if (isMounted) {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const normalized = res.data.map((a) => ({
+            id: a.id,
+            slug: a.slug,
+            title: a.title,
+            category: a.category || 'HOLISTIC LIVING',
+            author: a.author_name || 'Rashmi',
+            readingTime: `${a.reading_time || 5} min read`,
+            excerpt: a.excerpt,
+            coverImage: a.cover_image,
+          }));
+          setArticles(normalized);
+          setIsLiveFromDb(true);
+        } else if (res.success && Array.isArray(res.data) && res.data.length === 0) {
+          setArticles([]);
+          setIsLiveFromDb(true);
+        } else {
+          // Client-side fallback filter
+          const filtered = journalConfig.filter((article) => {
+            const matchesCat = activeCategory === 'ALL' || article.category === activeCategory;
+            const matchesSearch = !searchQuery.trim() ||
+              article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              article.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCat && matchesSearch;
+          });
+          setArticles(filtered);
+          setIsLiveFromDb(false);
+        }
+        setLoading(false);
+      }
+    }
+
+    const timer = setTimeout(loadArticles, 200);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [activeCategory, searchQuery]);
 
   return (
     <div className="py-16 md:py-24 space-y-16">
@@ -62,12 +111,33 @@ export default function Journal() {
           </div>
         </div>
 
-        {/* Articles Grid */}
-        {filteredArticles.length > 0 ? (
+        {/* Database Status Indicator */}
+        {isLiveFromDb && (
+          <div className="text-center -mt-6 mb-6">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+              Connected to PostgreSQL Knowledge Archive
+            </span>
+          </div>
+        )}
+
+        {/* Articles Grid / Loading Skeleton / Empty State */}
+        {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredArticles.map((article) => (
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="bg-sand-50 rounded-2xl border border-beige/60 p-6 animate-pulse space-y-4">
+                <div className="aspect-[16/10] bg-beige/40 rounded-xl" />
+                <div className="h-6 bg-beige/40 rounded w-3/4" />
+                <div className="h-4 bg-beige/30 rounded w-full" />
+                <div className="h-4 bg-beige/30 rounded w-2/3" />
+              </div>
+            ))}
+          </div>
+        ) : articles.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {articles.map((article) => (
               <article
-                key={article.id}
+                key={article.id || article.slug}
                 className="group bg-sand-50 rounded-2xl border border-beige/80 overflow-hidden shadow-soft hover:shadow-elevated transition-all duration-normal flex flex-col justify-between"
               >
                 <div className="relative aspect-[16/10] overflow-hidden bg-sand">

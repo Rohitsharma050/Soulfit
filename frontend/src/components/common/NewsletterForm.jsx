@@ -22,7 +22,7 @@ export default function NewsletterForm({ variant = 'footer', className = '' }) {
 
     if (result.success) {
       setStatus('success');
-      setMessage('Thank you for joining our circle. A confirmation has been recorded.');
+      setMessage(result.message || 'Thank you for joining our circle. A confirmation has been recorded.');
       setEmail('');
     } else {
       setStatus('error');

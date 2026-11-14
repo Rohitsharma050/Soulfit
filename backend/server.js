@@ -14,17 +14,27 @@ const app = express();
 app.use(helmet());
 
 // 2. CORS Configuration
-const allowedOrigins = [
-  config.frontendUrl,
+const configuredOrigins = config.frontendUrl
+  ? config.frontendUrl.split(',').map((url) => url.trim().replace(/\/+$/, ''))
+  : [];
+
+const defaultOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
 ];
 
+const allowedOrigins = new Set([...configuredOrigins, ...defaultOrigins]);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server) or matching allowed origins
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      if (allowedOrigins.has(normalizedOrigin) || normalizedOrigin.endsWith('.vercel.app')) {
         return callback(null, true);
       }
       return callback(new Error(`CORS policy does not allow access from origin: ${origin}`), false);

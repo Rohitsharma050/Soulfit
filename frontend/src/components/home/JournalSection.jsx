@@ -1,11 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock, BookOpen } from 'lucide-react';
+import { ArrowRight, Clock } from 'lucide-react';
 import Container from '../common/Container';
 import SectionHeading from '../common/SectionHeading';
 import { journalConfig } from '../../config/journalConfig';
+import { articleService } from '../../services/api';
 
 export default function JournalSection() {
+  const [articles, setArticles] = useState(journalConfig.slice(0, 3));
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchArticles() {
+      const res = await articleService.getAll({ limit: 3 });
+      if (isMounted) {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const normalized = res.data.map((a) => ({
+            id: a.id,
+            slug: a.slug,
+            title: a.title,
+            category: a.category || 'HOLISTIC LIVING',
+            author: a.author_name || 'Rashmi',
+            readingTime: `${a.reading_time || 5} min read`,
+            excerpt: a.excerpt,
+            coverImage: a.cover_image,
+          }));
+          setArticles(normalized);
+        } else {
+          setArticles(journalConfig.slice(0, 3));
+        }
+        setLoading(false);
+      }
+    }
+    fetchArticles();
+    return () => { isMounted = false; };
+  }, []);
+
   return (
     <section id="journal" className="py-20 md:py-28 bg-sand border-b border-beige/60">
       <Container size="wide">
@@ -31,9 +62,9 @@ export default function JournalSection() {
 
         {/* 3 Publication Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {journalConfig.slice(0, 3).map((article) => (
+          {articles.map((article) => (
             <article
-              key={article.id}
+              key={article.id || article.slug}
               className="group bg-sand-50 rounded-2xl border border-beige/80 overflow-hidden shadow-soft hover:shadow-elevated transition-all duration-normal flex flex-col justify-between"
             >
               {/* Card Image */}
