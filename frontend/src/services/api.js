@@ -14,11 +14,14 @@ export const servicesService = {
     }
   },
 
-  async getBySlug(slug) {
+  async getBySlug(slug, options = {}) {
     try {
-      const response = await apiClient.get(`/services/${slug}`);
+      const response = await apiClient.get(`/services/${slug}`, options);
       return { success: true, data: response.data.data };
     } catch (error) {
+      if (error.name === 'CanceledError' || error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+        return { success: false, cancelled: true };
+      }
       const message = error.response?.data?.message || error.message || 'Service not found.';
       return { success: false, error: message };
     }

@@ -30,6 +30,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       await runAllSeeds();
       process.exit(0);
     } catch (err) {
+      const errMsg = err.message || err.name || 'Database connection failed';
+      console.error('[SEED ERROR]', errMsg);
+      if (err.errors && Array.isArray(err.errors)) {
+        err.errors.forEach((e, i) => console.error(`  [Cause ${i + 1}]:`, e.message || e));
+      }
       process.exit(1);
     } finally {
       await closeDbPool();

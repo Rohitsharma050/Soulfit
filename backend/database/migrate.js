@@ -133,7 +133,17 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       }
       process.exit(0);
     } catch (err) {
-      console.error('[MIGRATION ERROR]', err.message);
+      const errMsg = err.message || err.name || 'Database connection failed';
+      console.error('[MIGRATION ERROR]', errMsg);
+      if (err.errors && Array.isArray(err.errors)) {
+        err.errors.forEach((e, i) => console.error(`  [Cause ${i + 1}]:`, e.message || e));
+      }
+      if (err.code) {
+        console.error('  [Error Code]:', err.code);
+      }
+      if (err.detail) {
+        console.error('  [Detail]:', err.detail);
+      }
       process.exit(1);
     } finally {
       await closeDbPool();

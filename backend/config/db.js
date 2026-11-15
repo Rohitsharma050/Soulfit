@@ -3,13 +3,22 @@ import { config } from './env.js';
 
 const { Pool } = pg;
 
+// Detect whether SSL is required (production, remote database host, or explicit sslmode)
+const isRemoteDb = Boolean(
+  config.databaseUrl &&
+  !config.databaseUrl.includes('localhost') &&
+  !config.databaseUrl.includes('127.0.0.1')
+);
+
+const requiresSsl = config.isProduction || isRemoteDb || config.databaseUrl?.includes('sslmode=require');
+
 // Initialize PostgreSQL Connection Pool using validated configuration
 export const pool = new Pool({
   connectionString: config.databaseUrl,
   max: config.db.max,
   idleTimeoutMillis: config.db.idleTimeoutMillis,
   connectionTimeoutMillis: config.db.connectionTimeoutMillis,
-  ssl: config.isProduction ? { rejectUnauthorized: false } : false,
+  ssl: requiresSsl ? { rejectUnauthorized: false } : false,
 });
 
 // Pool-level error handler for idle clients

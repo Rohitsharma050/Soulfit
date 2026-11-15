@@ -1,56 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import Container from '../components/common/Container';
 import Button from '../components/common/Button';
 import ConsultationCTA from '../components/home/ConsultationCTA';
 import { servicesConfig } from '../config/servicesConfig';
 import { servicesService } from '../services/api';
-import { CheckCircle2, ArrowRight, ArrowLeft, Clock } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, Clock, Compass } from 'lucide-react';
 
 export default function ServiceDetail({ forcedSlug }) {
   const { slug } = useParams();
   const currentSlug = forcedSlug || slug;
 
-  const localFallback = servicesConfig.find(
-    (s) => s.slug === currentSlug || s.id === currentSlug
-  );
+  // 1. Synchronously resolve fallback data from the local client knowledge base
+  // This guarantees immediate, non-stale rendering on the exact same frame route parameters change.
+  const fallbackService = useMemo(() => {
+    if (!currentSlug) return null;
+    return (
+      servicesConfig.find(
+        (s) => s.slug === currentSlug || s.id === currentSlug
+      ) || null
+    );
+  }, [currentSlug]);
 
-  const [service, setService] = useState(localFallback);
+  // 2. State for asynchronous API enrichment, network loading & errors
+  const [apiService, setApiService] = useState(null);
+  const [isLoading, setIsLoading] = useState(!fallbackService);
+  const [hasCheckedApi, setHasCheckedApi] = useState(false);
 
+  // 3. Effect: Synchronize with route parameter changes, abort stale requests & fetch live database updates
   useEffect(() => {
-    let isMounted = true;
-    async function loadService() {
-      if (currentSlug) {
-        const res = await servicesService.getBySlug(currentSlug);
-        if (isMounted && res.success && res.data) {
-          const s = res.data;
-          setService({
-            id: s.id,
-            slug: s.slug,
-            name: s.title?.split('—')[0] || s.title,
-            title: s.title,
-            category: s.category,
-            detailedDescription: s.description || s.short_description,
-            shortDescription: s.short_description,
-            badge: `Pillar 0${s.display_order || 1}`,
-            image: s.image_url || localFallback?.image,
-            offerings: Array.isArray(s.offerings) ? s.offerings : (s.offerings ? JSON.parse(s.offerings) : localFallback?.offerings || []),
-            principle: localFallback?.principle || 'Rest is an unbroken circle of self, space, and conscious fuel.',
-            sampleDailyInsight: localFallback?.sampleDailyInsight,
-          });
+    if (!currentSlug) return;
+
+    // Smoothly reset scroll position to page top on service navigation
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const controller = new AbortController();
+    let isCancelled = false;
+
+    async function loadServiceData() {
+      // If we already have local fallback data, keep UI responsive without full-screen loading blocker
+      if (!fallbackService) {
+        setIsLoading(true);
+      }
+      setHasCheckedApi(false);
+
+      try {
+        const res = await servicesService.getBySlug(currentSlug, {
+          signal: controller.signal,
+        });
+
+        if (!isCancelled) {
+          if (res.success && res.data) {
+            const s = res.data;
+            setApiService({
+              id: s.id || s.slug,
+              slug: s.slug,
+              name: s.name || s.title?.split('—')[0]?.trim() || s.title || fallbackService?.name,
+              title: s.title || fallbackService?.title,
+              category: s.category || fallbackService?.category,
+              detailedDescription: s.description || s.detailedDescription || s.short_description || fallbackService?.detailedDescription,
+              shortDescription: s.short_description || s.shortDescription || fallbackService?.shortDescription,
+              badge: s.badge || (s.display_order ? `Pillar 0${s.display_order}` : fallbackService?.badge),
+              image: s.image_url || fallbackService?.image,
+              offerings: Array.isArray(s.offerings)
+                ? s.offerings
+                : (s.offerings ? JSON.parse(s.offerings) : fallbackService?.offerings || []),
+              principle: fallbackService?.principle || 'Rest is an unbroken circle of self, space, and conscious fuel.',
+              sampleDailyInsight: fallbackService?.sampleDailyInsight,
+            });
+          } else {
+            // API not returning data for this slug
+            setApiService(null);
+          }
+        }
+      } catch (err) {
+        if (!isCancelled && err.name !== 'CanceledError' && err.name !== 'AbortError') {
+          setApiService(null);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+          setHasCheckedApi(true);
         }
       }
     }
-    loadService();
-    return () => { isMounted = false; };
+
+    loadServiceData();
+
+    // Abort in-flight request when user navigates to another service
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [currentSlug, fallbackService]);
+
+  // 4. Derive current service: ONLY use apiService if its slug matches the active route!
+  // This strictly eliminates race conditions and ensures previous service data never leaks onto the screen.
+  const isMatchingApiData = Boolean(
+    apiService && (apiService.slug === currentSlug || apiService.id === currentSlug)
+  );
+  const currentService = isMatchingApiData ? apiService : fallbackService;
+
+  // 5. Derive interconnected pillars for navigation carousel at page footer
+  const otherServices = useMemo(() => {
+    return servicesConfig.filter(
+      (s) => s.slug !== currentSlug && s.id !== currentSlug
+    );
   }, [currentSlug]);
 
-  if (!service && !localFallback) {
-    return <Navigate to="/services" replace />;
+  // Loading state when navigating to an unknown slug without local fallback
+  if (isLoading && !currentService) {
+    return (
+      <div className="py-20 md:py-28 animate-pulse">
+        <Container size="default">
+          <div className="h-4 w-32 bg-beige rounded mb-6" />
+          <div className="h-10 w-3/4 bg-beige rounded mb-4" />
+          <div className="h-6 w-1/2 bg-beige/60 rounded mb-8" />
+          <div className="aspect-[16/9] w-full bg-sand-50 rounded-2xl border border-beige mb-10" />
+        </Container>
+      </div>
+    );
   }
 
-  const currentService = service || localFallback;
-  const otherServices = servicesConfig.filter((s) => s.slug !== currentSlug && s.id !== currentSlug);
+  // Not Found State for invalid service slugs
+  if (!currentService && hasCheckedApi) {
+    return (
+      <div className="py-20 md:py-32 text-center space-y-6">
+        <Container size="default">
+          <div className="max-w-md mx-auto space-y-4">
+            <span className="text-xs uppercase tracking-widest text-terracotta font-semibold block">
+              Sanctuary Navigation
+            </span>
+            <h1 className="font-serif text-3xl sm:text-4xl text-forest font-normal">
+              Wellness Pillar Not Found
+            </h1>
+            <p className="text-olive text-sm sm:text-base font-light leading-relaxed">
+              We could not find the wellness pillar &ldquo;{currentSlug}&rdquo;. It may have been updated or relocated.
+            </p>
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button to="/services" variant="primary" icon={ArrowLeft} iconPosition="left">
+                View All Five Pillars
+              </Button>
+              <Button to="/" variant="secondary">
+                Return Home
+              </Button>
+            </div>
+          </div>
+        </Container>
+      </div>
+    );
+  }
+
+  if (!currentService) return null;
 
   return (
     <div className="py-12 md:py-20 space-y-16">
@@ -90,7 +191,7 @@ export default function ServiceDetail({ forcedSlug }) {
           <img
             src={currentService.image}
             alt={currentService.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-opacity duration-300"
           />
         </div>
 
@@ -101,7 +202,7 @@ export default function ServiceDetail({ forcedSlug }) {
               Sanctuary Core Principle
             </span>
             <blockquote className="font-serif italic text-2xl text-forest leading-relaxed">
-              “{currentService.principle}”
+              &ldquo;{currentService.principle}&rdquo;
             </blockquote>
           </div>
         )}
@@ -137,11 +238,19 @@ export default function ServiceDetail({ forcedSlug }) {
           </div>
         )}
 
-        {/* Other Pillars Carousel / Mini Grid */}
+        {/* Other Pillars Mini Grid */}
         <div className="pt-16 border-t border-beige/60 space-y-6">
-          <h3 className="font-serif text-2xl text-forest font-normal">
-            Explore Interconnected Pillars
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-serif text-2xl text-forest font-normal">
+              Explore Interconnected Pillars
+            </h3>
+            <Link
+              to="/services"
+              className="text-xs uppercase tracking-widest text-terracotta hover:underline font-semibold"
+            >
+              Overview &rarr;
+            </Link>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {otherServices.map((other) => (
@@ -154,7 +263,7 @@ export default function ServiceDetail({ forcedSlug }) {
                   {other.badge}
                 </span>
                 <span className="font-serif text-lg text-forest group-hover:text-terracotta transition-colors block">
-                  {other.name?.split('—')[0].trim() || other.title}
+                  {other.name?.split('—')[0]?.trim() || other.title}
                 </span>
                 <span className="text-xs text-olive/75 line-clamp-2 mt-1 font-light">
                   {other.shortDescription}

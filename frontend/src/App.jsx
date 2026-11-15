@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -21,12 +21,8 @@ export default function App() {
         <Route path="about" element={<About />} />
         <Route path="services" element={<Services />} />
 
-        {/* Five Distinct Service Detail Pillars */}
-        <Route path="services/yoga-wellness" element={<ServiceDetail forcedSlug="yoga-wellness" />} />
-        <Route path="services/vastu" element={<ServiceDetail forcedSlug="vastu" />} />
-        <Route path="services/astrology" element={<ServiceDetail forcedSlug="astrology" />} />
-        <Route path="services/corporate-wellbeing" element={<ServiceDetail forcedSlug="corporate-wellbeing" />} />
-        <Route path="services/food-as-medicine" element={<ServiceDetail forcedSlug="food-as-medicine" />} />
+        {/* Dynamic Service Detail Pillar Routes */}
+        <Route path="services/soulfit" element={<Navigate to="/services/yoga-wellness" replace />} />
         <Route path="services/:slug" element={<ServiceDetail />} />
 
         {/* Insights & Direct Contact */}
