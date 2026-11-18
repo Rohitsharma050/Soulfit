@@ -21,7 +21,7 @@ export default function SectionHeading({
   return (
     <div className={`flex flex-col max-w-3xl ${alignClasses[align] || alignClasses.center} ${className}`}>
       {overline && (
-        <span className={`text-xs md:text-sm font-sans uppercase tracking-[0.22em] text-terracotta font-semibold mb-3 ${overlineClassName}`}>
+        <span className={`text-xs md:text-sm font-sans uppercase tracking-[0.22em] text-forest font-bold mb-3 ${overlineClassName}`}>
           {overline}
         </span>
       )}
@@ -29,17 +29,17 @@ export default function SectionHeading({
       {title && (
         <h2 className={`font-serif text-3xl sm:text-4xl md:text-5xl text-forest font-normal leading-[1.15] tracking-tight mb-4 ${titleClassName}`}>
           {accentPosition === 'start' && titleAccent && (
-            <span className="italic text-terracotta font-normal">{titleAccent} </span>
+            <span className="italic text-forest-light font-normal">{titleAccent} </span>
           )}
           {title}
           {accentPosition === 'end' && titleAccent && (
-            <span className="italic text-terracotta font-normal"> {titleAccent}</span>
+            <span className="italic text-forest-light font-normal"> {titleAccent}</span>
           )}
         </h2>
       )}
 
       {description && (
-        <p className={`text-base sm:text-lg text-olive leading-relaxed max-w-2xl font-light ${descriptionClassName}`}>
+        <p className={`text-base sm:text-lg text-forest/75 leading-relaxed max-w-2xl font-light ${descriptionClassName}`}>
           {description}
         </p>
       )}

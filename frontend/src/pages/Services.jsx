@@ -16,21 +16,24 @@ export default function Services() {
       const res = await servicesService.getAll();
       if (isMounted) {
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-          const normalized = res.data.map((s, idx) => ({
-            id: s.id || s.slug,
-            slug: s.slug,
-            name: s.title,
-            title: s.category || s.title,
-            category: s.category,
-            shortDescription: s.short_description || s.shortDescription,
-            detailedDescription: s.description || s.detailedDescription,
-            badge: `Pillar 0${s.display_order || idx + 1}`,
-            iconName: s.icon_name || 'Activity',
-            path: `/services/${s.slug}`,
-            displayOrder: s.display_order || idx + 1,
-            image: s.image_url,
-            offerings: Array.isArray(s.offerings) ? s.offerings : (s.offerings ? JSON.parse(s.offerings) : []),
-          }));
+          const normalized = res.data.map((s, idx) => {
+            const fallback = servicesConfig.find((fc) => fc.slug === s.slug) || {};
+            return {
+              id: s.id || s.slug,
+              slug: s.slug,
+              name: fallback.name || s.title,
+              title: s.title || fallback.title,
+              category: s.category || fallback.category,
+              shortDescription: s.short_description || s.shortDescription || fallback.shortDescription,
+              detailedDescription: s.description || s.detailedDescription || fallback.detailedDescription,
+              badge: `Pillar 0${s.display_order || idx + 1}`,
+              iconName: s.icon_name || fallback.iconName || 'Activity',
+              path: `/services/${s.slug}`,
+              displayOrder: s.display_order || idx + 1,
+              image: s.image_url || fallback.image,
+              offerings: Array.isArray(s.offerings) ? s.offerings : (s.offerings ? JSON.parse(s.offerings) : fallback.offerings || []),
+            };
+          });
           setServices(normalized);
         } else {
           setServices(servicesConfig);
@@ -43,13 +46,13 @@ export default function Services() {
   }, []);
 
   return (
-    <div className="py-16 md:py-24 space-y-20">
+    <div className="py-16 md:py-24 space-y-20 bg-sand">
       <Container size="wide">
         <SectionHeading
-          overline="Holistic Offerings"
+          overline="Five Gateways of Harmony"
           title="The Five Pillars of"
           titleAccent="Sanctuary Living"
-          description="Explore our complete suite of individualized services spanning physical movement, spatial geometry, cosmic understanding, cellular nourishment, and organizational health."
+          description="Explore our complete suite of individualized services spanning restorative yoga, spatial geometry, cosmic understanding, cellular nourishment, and organizational health."
           className="mb-16"
         />
 

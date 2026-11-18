@@ -15,22 +15,22 @@ export default function Footer() {
       <Container size="wide">
         {/* Main 4-Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-16 border-b border-warmWhite/15">
-          {/* Col 1: Brand Mission & Founder's Statement (Span 4) */}
+          {/* Col 1: Brand Mission & Statement (Span 4) */}
           <div className="lg:col-span-4 space-y-5">
-            <BrandLogo variant="light" />
+            <BrandLogo variant="light" size="large" />
             
             <p className="text-sm text-sand/80 leading-relaxed font-light pr-4 max-w-sm">
-              A holistic wellness sanctuary founded by Rashmi to unify physical vitality, spatial geometry, cosmic understanding, and cellular nourishment into one seamless path.
+              The Harmony Project is a complete wellness sanctuary integrating conscious physical vitality, elemental spatial alignment, cosmic understanding and cellular nourishment into one seamless path.
             </p>
 
             <blockquote className="border-l-2 border-gold pl-3 py-1 my-4">
               <p className="font-serif italic text-base text-gold-light leading-snug">
-                “Creating harmony between the self, space and the way we live.”
+                “When you take care of yourself, you create the strength to take on everything else.”
               </p>
             </blockquote>
 
             <p className="text-xs text-sand/60">
-              Guided by ancient wisdom, designed for modern lifestyle.
+              Where Ancient Wisdom Meets Conscious Living &bull; Soulfit Sanctuary
             </p>
           </div>
 
@@ -75,10 +75,10 @@ export default function Footer() {
           {/* Col 4: Cosmic & Wellness Digest (Span 3) */}
           <div className="lg:col-span-3 space-y-4">
             <h3 className="font-sans text-xs uppercase tracking-[0.2em] text-gold font-semibold">
-              Cosmic &amp; Wellness Digest
+              Wellness Digest
             </h3>
             <p className="text-xs text-sand/80 leading-relaxed font-light">
-              Receive thoughtful weekly reflections on seasonal nourishment, moon cycles, energy balance, and ancient wisdom.
+              Receive thoughtful weekly reflections on restorative yoga, seasonal nourishment, mindful movement, and balanced living.
             </p>
 
             <div className="pt-2">
@@ -90,7 +90,7 @@ export default function Footer() {
         {/* Footer Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sand/60">
           <p>
-            &copy; {currentYear} The Harmony Project. Guided by Rashmi. All rights reserved.
+            &copy; {currentYear} The Harmony Project — Soulfit. All rights reserved.
           </p>
 
           <nav className="flex items-center gap-6" aria-label="Legal Navigation">

@@ -1,8 +1,9 @@
 import React from 'react';
 import Hero from '../components/home/Hero';
+import IntroSection from '../components/home/IntroSection';
 import Philosophy from '../components/home/Philosophy';
 import Services from '../components/home/Services';
-import FounderSection from '../components/home/FounderSection';
+import LeadershipSection from '../components/home/LeadershipSection';
 import Testimonials from '../components/home/Testimonials';
 import JournalSection from '../components/home/JournalSection';
 import ConsultationCTA from '../components/home/ConsultationCTA';
@@ -13,22 +14,25 @@ export default function Home() {
       {/* 1. Hero Section */}
       <Hero />
 
-      {/* 2. Brand Philosophy */}
+      {/* 2. Sneak Peek in Busy Life & Restorative Introduction */}
+      <IntroSection />
+
+      {/* 3. Breathe, Relax and Be Still / Balance Your Life */}
       <Philosophy />
 
-      {/* 3. Five Wellness Pillars */}
+      {/* 4. Five Wellness Pillars */}
       <Services />
 
-      {/* 4. Founder Introduction: Rashmi */}
-      <FounderSection />
+      {/* 5. A Message from the Leadership */}
+      <LeadershipSection />
 
-      {/* 5. Client Testimonials (Graceful conditional render) */}
+      {/* 6. Client Testimonials (Graceful conditional render) */}
       <Testimonials />
 
-      {/* 6. Knowledge Sanctuary / Journal */}
+      {/* 7. Knowledge Sanctuary / Journal Dispatches */}
       <JournalSection />
 
-      {/* 7. Consultation / Initiation CTA */}
+      {/* 8. Consultation / Initiation CTA */}
       <ConsultationCTA />
     </div>
   );

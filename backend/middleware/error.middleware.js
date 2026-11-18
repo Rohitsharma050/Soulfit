@@ -70,6 +70,7 @@ export function errorHandler(err, req, res, next) {
     success: false,
     statusCode,
     message,
+    error: message,
     errors,
     ...(config.isDevelopment && statusCode >= 500 && { stack: err.stack }),
   });

@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { seedServices } from '../database/seeds/001_services_seed.js';
 import { seedArticles } from '../database/seeds/002_articles_seed.js';
+import { seedConsultationData } from '../database/seeds/003_consultation_seeds.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,15 +47,20 @@ export async function setupTestDatabase() {
 
   const sql1 = sanitizeForPgMem(fs.readFileSync(path.join(migrationsDir, '001_initial_schema.sql'), 'utf8'));
   const sql2 = sanitizeForPgMem(fs.readFileSync(path.join(migrationsDir, '002_expand_schema.sql'), 'utf8'));
+  const sql3 = sanitizeForPgMem(fs.readFileSync(path.join(migrationsDir, '003_auth_schema.sql'), 'utf8'));
+  const sql4 = sanitizeForPgMem(fs.readFileSync(path.join(migrationsDir, '004_consultation_booking_schema.sql'), 'utf8'));
 
   const client = await pool.connect();
   try {
     await client.query(sql1);
     await client.query(sql2);
+    await client.query(sql3);
+    await client.query(sql4);
 
     // Apply seed data
     await seedServices(client);
     await seedArticles(client);
+    await seedConsultationData(client);
   } finally {
     client.release();
   }

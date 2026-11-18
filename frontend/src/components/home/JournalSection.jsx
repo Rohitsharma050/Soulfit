@@ -21,7 +21,7 @@ export default function JournalSection() {
             slug: a.slug,
             title: a.title,
             category: a.category || 'HOLISTIC LIVING',
-            author: a.author_name || 'Rashmi',
+            author: a.author_name || 'Soulfit Guidance',
             readingTime: `${a.reading_time || 5} min read`,
             excerpt: a.excerpt,
             coverImage: a.cover_image,
@@ -38,7 +38,7 @@ export default function JournalSection() {
   }, []);
 
   return (
-    <section id="journal" className="py-20 md:py-28 bg-sand border-b border-beige/60">
+    <section id="journal" className="py-20 md:py-28 bg-sand border-b border-forest/10">
       <Container size="wide">
         {/* Section Header with Explore All Link */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
@@ -46,14 +46,14 @@ export default function JournalSection() {
             overline="Knowledge Sanctuary"
             title="Latest Insights &amp;"
             titleAccent="Dispatches"
-            description="Explore thoughtful reflections on wellness, ancient wisdom, seasonal nourishment, and the art of balanced living."
+            description="Explore thoughtful reflections on restorative yoga, mindful living, seasonal nourishment, and the art of recovery."
             align="left"
             className="md:mx-0"
           />
 
           <Link
             to="/journal"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-forest hover:text-terracotta transition-colors pb-1 flex-shrink-0"
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-forest hover:text-forest-light transition-colors pb-1 flex-shrink-0"
           >
             <span>Explore All Publications</span>
             <ArrowRight className="w-4 h-4" />
@@ -65,7 +65,7 @@ export default function JournalSection() {
           {articles.map((article) => (
             <article
               key={article.id || article.slug}
-              className="group bg-sand-50 rounded-2xl border border-beige/80 overflow-hidden shadow-soft hover:shadow-elevated transition-all duration-normal flex flex-col justify-between"
+              className="group bg-sand-50 rounded-2xl border border-forest/15 overflow-hidden shadow-soft hover:shadow-elevated transition-all duration-normal flex flex-col justify-between"
             >
               {/* Card Image */}
               <div className="relative aspect-[16/10] overflow-hidden bg-sand">
@@ -76,7 +76,7 @@ export default function JournalSection() {
                   loading="lazy"
                 />
                 <div className="absolute top-4 left-4">
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-sans uppercase tracking-widest font-semibold bg-sand-50/95 backdrop-blur-sm text-terracotta border border-beige shadow-sm">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-sans uppercase tracking-widest font-bold bg-sand-50/95 backdrop-blur-sm text-forest border border-forest/20 shadow-sm">
                     {article.category}
                   </span>
                 </div>
@@ -85,7 +85,7 @@ export default function JournalSection() {
               {/* Card Content */}
               <div className="p-6 sm:p-8 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="font-serif text-2xl text-forest font-normal leading-snug mb-3 group-hover:text-terracotta transition-colors line-clamp-2">
+                  <h3 className="font-serif text-2xl text-forest font-normal leading-snug mb-3 group-hover:text-forest-light transition-colors line-clamp-2">
                     <Link to="/journal">
                       {article.title}
                     </Link>
@@ -97,9 +97,9 @@ export default function JournalSection() {
                 </div>
 
                 {/* Card Meta & Read Action */}
-                <div className="pt-4 border-t border-beige/60 flex items-center justify-between text-xs text-olive">
+                <div className="pt-4 border-t border-forest/10 flex items-center justify-between text-xs text-forest/70">
                   <div className="flex items-center gap-2">
-                    <span className="font-serif italic text-forest">By {article.author}</span>
+                    <span className="font-serif italic text-forest font-medium">{article.author}</span>
                     <span>&bull;</span>
                     <span className="inline-flex items-center gap-1 text-[11px]">
                       <Clock className="w-3 h-3" />
@@ -109,7 +109,7 @@ export default function JournalSection() {
 
                   <Link
                     to="/journal"
-                    className="font-semibold text-terracotta group-hover:underline inline-flex items-center gap-1"
+                    className="font-bold text-forest group-hover:underline inline-flex items-center gap-1"
                   >
                     <span>Read Brief</span>
                     <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />

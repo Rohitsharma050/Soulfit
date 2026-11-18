@@ -104,17 +104,162 @@ export const articleService = {
 };
 
 /**
- * Consultation Inquiry Service (scaffold for future Phase 6 integration)
+ * Consultation Booking Service (Phase 5)
  */
 export const consultationService = {
-  async submitInquiry(inquiryData) {
+  async getTypes() {
     try {
-      const response = await apiClient.post('/consultations/inquiry', inquiryData);
-      return { success: true, data: response.data };
+      const response = await apiClient.get('/consultations/types');
+      return { success: true, data: response.data.data };
     } catch (error) {
-      const message = error.response?.data?.message || error.message || 'Consultation request submission is being connected.';
+      const message = error.response?.data?.message || error.message || 'Unable to retrieve consultation types.';
       return { success: false, error: message };
     }
+  },
+
+  async getAvailableDates({ typeId, month, startDate, endDate, timezone = 'Asia/Kolkata' }) {
+    try {
+      const params = { type_id: typeId, timezone };
+      if (month) params.month = month;
+      if (startDate) params.start_date = startDate;
+      if (endDate) params.end_date = endDate;
+      const response = await apiClient.get('/consultations/availability/dates', { params });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Unable to retrieve available dates.';
+      return { success: false, error: message };
+    }
+  },
+
+  async getAvailableSlots({ typeId, date, timezone = 'Asia/Kolkata' }) {
+    try {
+      const response = await apiClient.get('/consultations/availability', {
+        params: { type_id: typeId, date, timezone },
+      });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Unable to retrieve time slots.';
+      return { success: false, error: message };
+    }
+  },
+
+  async book({ typeId, slotStart, goals, notes, phone, idempotencyKey, timezone = 'Asia/Kolkata' }) {
+    try {
+      const response = await apiClient.post('/consultations/book', {
+        type_id: typeId,
+        slot_start: slotStart,
+        goals,
+        notes,
+        phone,
+        idempotency_key: idempotencyKey,
+        timezone,
+      });
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = error.response?.data?.message || error.response?.data?.error || error.message || 'Booking failed.';
+      const status = error.response?.status;
+      return { success: false, error: message, status };
+    }
+  },
+
+  async getMyConsultations({ status = 'all', page = 1, limit = 20 } = {}) {
+    try {
+      const response = await apiClient.get('/consultations/my', {
+        params: { status, page, limit },
+      });
+      return {
+        success: true,
+        data: response.data.data,
+        meta: response.data.meta,
+      };
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Unable to load consultations.';
+      return { success: false, error: message };
+    }
+  },
+
+  async getById(id) {
+    try {
+      const response = await apiClient.get(`/consultations/${id}`);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Consultation not found.';
+      return { success: false, error: message };
+    }
+  },
+
+  async cancel(id, reason) {
+    try {
+      const response = await apiClient.patch(`/consultations/${id}/cancel`, { reason });
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Unable to cancel consultation.';
+      return { success: false, error: message };
+    }
+  },
+
+  async reschedule(id, newSlotStart, timezone = 'Asia/Kolkata') {
+    try {
+      const response = await apiClient.patch(`/consultations/${id}/reschedule`, {
+        new_slot_start: newSlotStart,
+        timezone,
+      });
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Unable to reschedule consultation.';
+      return { success: false, error: message };
+    }
+  },
+};
+
+/**
+ * Authentication & Identity Service (Phase 4)
+ */
+export const authService = {
+  async register({ name, email, password, confirmPassword }) {
+    try {
+      const response = await apiClient.post('/auth/register', { name, email, password, confirmPassword });
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = error.response?.data?.message || error.response?.data?.error || error.message || 'Registration failed.';
+      const errors = error.response?.data?.errors || [];
+      return { success: false, error: message, errors };
+    }
+  },
+
+  async login({ email, password, rememberMe = false }) {
+    try {
+      const response = await apiClient.post('/auth/login', { email, password, rememberMe });
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = error.response?.data?.message || error.response?.data?.error || error.message || 'Login failed.';
+      const errors = error.response?.data?.errors || [];
+      return { success: false, error: message, errors };
+    }
+  },
+
+  async getMe() {
+    try {
+      const response = await apiClient.get('/auth/me');
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = error.response?.data?.message || error.response?.data?.error || error.message;
+      return { success: false, error: message, status: error.response?.status };
+    }
+  },
+
+  async logout() {
+    try {
+      const response = await apiClient.post('/auth/logout');
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  getGoogleAuthUrl() {
+    const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+    return `${base}/auth/google`;
   },
 };
 
@@ -124,4 +269,5 @@ export default {
   contact: contactService,
   articles: articleService,
   consultation: consultationService,
+  auth: authService,
 };

@@ -8,6 +8,12 @@ import ServiceDetail from './pages/ServiceDetail';
 import Journal from './pages/Journal';
 import Contact from './pages/Contact';
 import Legal from './pages/Legal';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import BookConsultation from './pages/BookConsultation';
+import MyConsultations from './pages/MyConsultations';
+import ProtectedRoute from './components/common/ProtectedRoute';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -28,6 +34,36 @@ export default function App() {
         {/* Insights & Direct Contact */}
         <Route path="journal" element={<Journal />} />
         <Route path="contact" element={<Contact />} />
+
+        {/* Authentication & User Identity (Phase 4) */}
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Consultation Booking & Member Appointments (Phase 5) */}
+        <Route
+          path="book"
+          element={
+            <ProtectedRoute>
+              <BookConsultation />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="my-consultations"
+          element={
+            <ProtectedRoute>
+              <MyConsultations />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Legal & Standards */}
         <Route path="privacy" element={<Legal type="privacy" />} />

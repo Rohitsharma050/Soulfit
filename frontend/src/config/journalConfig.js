@@ -1,6 +1,6 @@
 /**
  * Journal / Insights Configuration
- * Grounded strictly in authentic project documentation and approved concepts.
+ * Grounded in authentic project documentation and restorative wellness principles.
  */
 
 export const journalConfig = [
@@ -8,9 +8,9 @@ export const journalConfig = [
     id: 'postural-alignment-vs-cardio',
     slug: 'postural-alignment-vs-cardio',
     title: 'Why 20 Minutes of Postural Alignment Beats 2 Hours of Mindless Cardio',
-    category: 'SOULFIT & MIND',
-    author: 'Rashmi',
-    authorRole: 'Founder & Holistic Mentor',
+    category: 'SOULFIT RESTORATION',
+    author: 'Soulfit Guidance',
+    authorRole: 'The Leadership Team',
     readingTime: '5 min read',
     publishedDate: 'November 2026',
     excerpt: 'How structural spinal integrity and breath rhythm reprogram your nervous system out of perpetual fight-or-flight into sustainable restorative vitality.',
@@ -22,7 +22,7 @@ export const journalConfig = [
     slug: 'northeast-water-corner-vastu',
     title: 'The Northeast Water Corner: Why Clutter Here Clouded Your Focus',
     category: 'VASTU PRINCIPLES',
-    author: 'Rashmi',
+    author: 'Soulfit Guidance',
     authorRole: 'Spatial Geometry Mentor',
     readingTime: '7 min read',
     publishedDate: 'October 2026',
@@ -35,7 +35,7 @@ export const journalConfig = [
     slug: 'gut-inflammation-mind-anxiety',
     title: 'Inflammation in the Gut Is Anxiety in the Mind',
     category: 'FOOD AS MEDICINE',
-    author: 'Rashmi',
+    author: 'Soulfit Guidance',
     authorRole: 'Cellular Nutrition Guide',
     readingTime: '6 min read',
     publishedDate: 'October 2026',

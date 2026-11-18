@@ -10,7 +10,7 @@ export default function ConsultationCTA() {
     fullName: '',
     email: '',
     phone: '',
-    pillarInterest: servicesConfig[0]?.name || 'Soulfit — Gym & Yoga',
+    pillarInterest: servicesConfig[0]?.name || 'Soulfit — Restorative Yoga',
     goals: '',
   });
 
@@ -46,7 +46,6 @@ export default function ConsultationCTA() {
     setStatus('loading');
     setFeedback('');
 
-    // Centralized API Integration
     const response = await consultationService.submitInquiry(formData);
 
     if (response.success) {
@@ -56,34 +55,32 @@ export default function ConsultationCTA() {
         fullName: '',
         email: '',
         phone: '',
-        pillarInterest: servicesConfig[0]?.name || 'Soulfit — Gym & Yoga',
+        pillarInterest: servicesConfig[0]?.name || 'Soulfit — Restorative Yoga',
         goals: '',
       });
     } else {
-      // Gracefully communicate that automated slot booking is scheduled for Phase 6,
-      // without misleading the user that an appointment was confirmed.
       setStatus('notice');
       setFeedback('Thank you for reaching out. Live calendar slot booking is being connected in the next phase. Your interest in ' + formData.pillarInterest + ' has been saved locally for your session.');
     }
   };
 
   return (
-    <section id="consultation" className="py-20 md:py-28 bg-sand-50 relative overflow-hidden">
+    <section id="consultation" className="py-20 md:py-28 bg-sand-50 relative overflow-hidden border-t border-forest/10">
       <Container size="default">
         {/* Section Heading */}
         <SectionHeading
           overline="Initiation Sanctuary"
           title="Your Journey Towards"
-          titleAccent="Harmony Begins Here"
+          titleAccent="Restorative Balance Begins Here"
           description="Take the first intentional step toward aligning your physical strength, living space, nourishment, and daily rhythms."
           className="mb-12"
         />
 
         {/* Consultation Form Card */}
-        <div className="bg-sand rounded-2xl border border-beige p-8 sm:p-12 shadow-elevated max-w-2xl mx-auto">
+        <div className="bg-sand rounded-2xl border-2 border-forest/15 p-8 sm:p-12 shadow-elevated max-w-2xl mx-auto">
           {status === 'success' ? (
             <div className="text-center py-8 space-y-4">
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
+              <div className="w-14 h-14 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <h3 className="font-serif text-3xl text-forest font-medium">Inquiry Received</h3>
@@ -101,9 +98,9 @@ export default function ConsultationCTA() {
           ) : (
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
               {status === 'notice' && (
-                <div className="p-4 rounded-brand bg-beige/60 border border-beige-dark text-forest text-xs space-y-2">
-                  <div className="flex items-center gap-2 font-semibold text-terracotta">
-                    <Sparkles className="w-4 h-4 text-gold" />
+                <div className="p-4 rounded-brand bg-forest/5 border border-forest/20 text-forest text-xs space-y-2">
+                  <div className="flex items-center gap-2 font-semibold text-forest">
+                    <Sparkles className="w-4 h-4 text-forest" />
                     <span>Booking System Preparation Notice</span>
                   </div>
                   <p className="leading-relaxed font-light">{feedback}</p>
@@ -129,9 +126,9 @@ export default function ConsultationCTA() {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleChange}
-                    placeholder="e.g., Rashmi Sharma"
+                    placeholder="e.g., Priya Sharma"
                     required
-                    className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-beige text-forest placeholder:text-olive/50 focus:outline-none focus:ring-2 focus:ring-terracotta"
+                    className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-forest/15 text-forest placeholder:text-forest/40 focus:outline-none focus:ring-2 focus:ring-forest"
                   />
                 </div>
 
@@ -148,7 +145,7 @@ export default function ConsultationCTA() {
                     onChange={handleChange}
                     placeholder="name@domain.com"
                     required
-                    className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-beige text-forest placeholder:text-olive/50 focus:outline-none focus:ring-2 focus:ring-terracotta"
+                    className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-forest/15 text-forest placeholder:text-forest/40 focus:outline-none focus:ring-2 focus:ring-forest"
                   />
                 </div>
               </div>
@@ -167,7 +164,7 @@ export default function ConsultationCTA() {
                     onChange={handleChange}
                     placeholder="+91 98765 43210"
                     required
-                    className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-beige text-forest placeholder:text-olive/50 focus:outline-none focus:ring-2 focus:ring-terracotta"
+                    className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-forest/15 text-forest placeholder:text-forest/40 focus:outline-none focus:ring-2 focus:ring-forest"
                   />
                 </div>
 
@@ -181,7 +178,7 @@ export default function ConsultationCTA() {
                     name="pillarInterest"
                     value={formData.pillarInterest}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-beige text-forest focus:outline-none focus:ring-2 focus:ring-terracotta"
+                    className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-forest/15 text-forest focus:outline-none focus:ring-2 focus:ring-forest"
                   >
                     {servicesConfig.map((s) => (
                       <option key={s.id} value={s.name}>
@@ -204,7 +201,7 @@ export default function ConsultationCTA() {
                   value={formData.goals}
                   onChange={handleChange}
                   placeholder="Share any specific physical conditions, living space challenges, or goals you wish to address..."
-                  className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-beige text-forest placeholder:text-olive/50 focus:outline-none focus:ring-2 focus:ring-terracotta resize-y"
+                  className="w-full px-4 py-2.5 text-sm rounded-brand bg-sand-50 border border-forest/15 text-forest placeholder:text-forest/40 focus:outline-none focus:ring-2 focus:ring-forest resize-y"
                 />
               </div>
 
@@ -213,11 +210,11 @@ export default function ConsultationCTA() {
                 <button
                   type="submit"
                   disabled={status === 'loading'}
-                  className="w-full inline-flex items-center justify-center px-6 py-3.5 rounded-brand bg-forest hover:bg-forest-light active:bg-forest-dark text-sand font-medium text-sm transition-all duration-normal shadow-soft hover:shadow-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta disabled:opacity-60 gap-2"
+                  className="w-full inline-flex items-center justify-center px-6 py-3.5 rounded-brand bg-forest hover:bg-forest-light active:bg-forest-dark text-sand-light font-semibold text-sm transition-all duration-normal shadow-forest hover:shadow-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-forest disabled:opacity-60 gap-2"
                 >
                   {status === 'loading' ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-sand" />
+                      <Loader2 className="w-4 h-4 animate-spin text-sand-light" />
                       <span>Transmitting Inquiry...</span>
                     </>
                   ) : (
@@ -229,7 +226,7 @@ export default function ConsultationCTA() {
                 </button>
               </div>
 
-              <p className="text-[11px] text-center text-olive font-light">
+              <p className="text-[11px] text-center text-forest/70 font-light">
                 All consultations adhere to strict privacy, personal safety, and holistic health ethics.
               </p>
             </form>

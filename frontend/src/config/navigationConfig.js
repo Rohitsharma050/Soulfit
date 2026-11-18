@@ -6,12 +6,12 @@
 export const navigationConfig = {
   brand: {
     name: 'The Harmony Project',
-    tagline: 'HOLISTIC LIVING ECOSYSTEM',
-    founder: 'Rashmi',
+    tagline: 'Where Ancient Wisdom Meets Conscious Living',
+    company: 'Soulfit',
   },
   links: [
     { label: 'Home', path: '/' },
-    { label: 'About', path: '/about' },
+    { label: 'About Us', path: '/about' },
     {
       label: 'Services',
       path: '/services',
@@ -19,7 +19,7 @@ export const navigationConfig = {
       items: [
         {
           name: 'Soulfit — Gym & Yoga',
-          subtitle: 'Restorative movement & lifelong disorder care',
+          subtitle: 'Restorative yoga, disorders care & lifetime energy',
           path: '/services/yoga-wellness',
           badge: 'Physical Mastery',
         },
@@ -49,7 +49,7 @@ export const navigationConfig = {
         },
       ],
     },
-    { label: 'Journal', path: '/journal' },
+    { label: 'Insights', path: '/journal' },
     { label: 'Contact', path: '/contact' },
   ],
   cta: {
@@ -58,18 +58,18 @@ export const navigationConfig = {
   },
   footer: {
     servicesCol: [
-      { label: 'Soulfit & Yoga Life', path: '/services/yoga-wellness' },
+      { label: 'Soulfit Restorative Yoga', path: '/services/yoga-wellness' },
       { label: 'Vastu Spatial Alignment', path: '/services/vastu' },
       { label: 'Astrology Consultations', path: '/services/astrology' },
       { label: 'Corporate Wellbeing Programs', path: '/services/corporate-wellbeing' },
       { label: 'Food as Medicine Plans', path: '/services/food-as-medicine' },
     ],
     exploreCol: [
-      { label: 'About Founder Rashmi', path: '/about' },
-      { label: 'Our Core Philosophy', path: '/#philosophy' },
-      { label: 'Journal & Insights', path: '/journal' },
-      { label: 'Contact Us', path: '/contact' },
-      { label: 'Book a Consultation', path: '/#consultation' },
+      { label: 'About Soulfit', path: '/about' },
+      { label: 'The Soulfit Philosophy', path: '/about#philosophy' },
+      { label: 'Leadership Message', path: '/#leadership' },
+      { label: 'Insights & Dispatches', path: '/journal' },
+      { label: 'Contact Sanctuary', path: '/contact' },
     ],
     legal: [
       { label: 'Privacy Policy', path: '/privacy' },

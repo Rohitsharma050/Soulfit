@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { config } from './config/env.js';
 import { closeDbPool } from './config/db.js';
@@ -45,9 +46,10 @@ app.use(
   })
 );
 
-// 3. Request Body Parsing with Strict Size Limit
+// 3. Request Body & Cookie Parsing
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(cookieParser());
 
 // 4. Rate Limiting for API routes
 const apiLimiter = rateLimit({

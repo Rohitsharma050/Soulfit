@@ -3,6 +3,18 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-forest: #1E2C24;
+    --color-forest-light: #2A3C31;
+    --color-forest-dark: #141E18;
+    --color-sand: #FBF9F5;
+    --color-sand-dark: #EDE7DC;
+    --color-terracotta: #C87D55;
+    --color-gold: #D4AF37;
+    --color-olive: #65745B;
+    --color-beige: #EDE7DC;
+  }
+
   *,
   *::before,
   *::after {
@@ -24,6 +36,7 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
     font-feature-settings: "lnum" 1;
+    color: #1E2C24;
   }
 
   img, picture, svg, video {
@@ -35,16 +48,16 @@
     font-family: inherit;
   }
 
-  /* Accessible Focus States */
+  /* Accessible Focus States with Forest Green */
   :focus-visible {
-    outline: 2px solid #C87D55;
+    outline: 2px solid #1E2C24;
     outline-offset: 3px;
     border-radius: 4px;
   }
 
-  /* Selection Style */
+  /* Selection Style with Forest Green Tint */
   ::selection {
-    background-color: rgba(200, 125, 85, 0.25);
+    background-color: rgba(30, 44, 36, 0.22);
     color: #1E2C24;
   }
 }

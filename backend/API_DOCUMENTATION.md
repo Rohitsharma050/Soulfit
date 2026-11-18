@@ -47,6 +47,7 @@ All responses conform to standardized JSON formats.
 
 | Category | Endpoints Protected | Window | Max Requests | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
+| **Auth Limiter** | `POST /api/v1/auth/*` | 15 minutes | 30 requests per IP | Mitigates brute-force credential stuffing and registration spam |
 | **Contact Limiter** | `POST /api/v1/contact` | 15 minutes | 5 requests per IP | Prevents email bombarding and inbox spam |
 | **Newsletter Limiter** | `POST /api/v1/newsletter/*` | 15 minutes | 10 requests per IP | Protects subscription table from mass bot abuse |
 | **Public Limiter** | `GET /api/v1/services/*`, `GET /api/v1/articles/*` | 15 minutes | 100 requests per IP | Mitigates automated scraping and DDoS surges |
@@ -207,7 +208,7 @@ Content-Type: application/json
 {
   "success": true,
   "statusCode": 201,
-  "message": "Your message has been received. Rashmi's sanctuary team will review and connect with you shortly.",
+  "message": "Your message has been received. Soulfit's sanctuary team will review and connect with you shortly.",
   "data": {
     "id": "18cf325e-38aa-462c-8064-1ddbc131d9c7",
     "name": "Aarav Sharma",
@@ -285,7 +286,7 @@ Content-Type: application/json
 {
   "success": true,
   "statusCode": 201,
-  "message": "Thank you for subscribing to Rashmi's Cosmic & Wellness Digest.",
+  "message": "Thank you for subscribing to Soulfit's Wellness Digest.",
   "data": {
     "email": "seeker@harmonyproject.life",
     "status": "SUBSCRIBED"
@@ -385,7 +386,7 @@ Accept: application/json
       "title": "Inflammation in the Gut Is Anxiety in the Mind",
       "excerpt": "How repairing the enteric nervous system through targeted seed broths restores serene emotional states.",
       "category": "FOOD AS MEDICINE",
-      "author_name": "Rashmi",
+      "author_name": "Soulfit Guidance",
       "reading_time_minutes": 6,
       "featured_image_url": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80",
       "published_at": "2026-10-18T10:00:00.000Z",
@@ -437,7 +438,7 @@ Accept: application/json
     "excerpt": "How repairing the enteric nervous system through targeted seed broths restores serene emotional states.",
     "content": "Modern gastroenterology has finally confirmed what ancient Vedic science termed the Agni-Manas connection...",
     "category": "FOOD AS MEDICINE",
-    "author_name": "Rashmi",
+    "author_name": "Soulfit Guidance",
     "reading_time_minutes": 6,
     "featured_image_url": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80",
     "status": "PUBLISHED",
@@ -495,3 +496,435 @@ Accept: application/json
   "timestamp": "2026-11-14T08:00:00.000Z"
 }
 ```
+
+---
+
+## 8. Authentication & User Identity Management API (Phase 4)
+
+The Phase 4 identity architecture enforces defense-in-depth:
+1. **HttpOnly Cookie Storage:** JWT auth tokens are delivered exclusively in secure `HttpOnly`, `SameSite: Lax`, and `Secure` (production) cookies named `auth_token`. Tokens are never exposed to browser JavaScript (no `localStorage` or `sessionStorage` storage).
+2. **Password Security:** Passwords are salted and hashed using `bcryptjs` with 12 computational rounds. Plain-text passwords are never stored or logged.
+3. **User Enumeration Defense:** Failed login attempts return an identical generic `401 Unauthorized` response whether the email exists or not.
+4. **Google OAuth 2.0 Integration:** Server-side verification and callback handling. Prevents duplicate identities by safely linking verified Google accounts to existing email profiles.
+
+### 8.1 Register New Account
+- **URL:** `/api/v1/auth/register`
+- **Method:** `POST`
+- **Rate Limit:** 30 requests / 15 minutes
+- **Body Schema:**
+```json
+{
+  "name": "Rohit Sharma",
+  "email": "rohit@example.com",
+  "password": "Password123!",
+  "confirmPassword": "Password123!"
+}
+```
+- **Password Requirements:** Minimum 8 characters, containing at least one letter and at least one number.
+- **Success (`201 Created`):**
+  - Sets `auth_token` HttpOnly cookie.
+```json
+{
+  "success": true,
+  "statusCode": 201,
+  "message": "Account created successfully.",
+  "data": {
+    "id": 14,
+    "name": "Rohit Sharma",
+    "email": "rohit@example.com",
+    "role": "user",
+    "avatar": null,
+    "auth_provider": "local",
+    "created_at": "2026-11-17T05:00:00.000Z"
+  }
+}
+```
+- **Error (`409 Conflict`):**
+```json
+{
+  "success": false,
+  "statusCode": 409,
+  "message": "An account with this email address already exists.",
+  "error": "An account with this email address already exists."
+}
+```
+
+### 8.2 Login (Email & Password)
+- **URL:** `/api/v1/auth/login`
+- **Method:** `POST`
+- **Rate Limit:** 30 requests / 15 minutes
+- **Body Schema:**
+```json
+{
+  "email": "rohit@example.com",
+  "password": "Password123!",
+  "rememberMe": true
+}
+```
+- **Success (`200 OK`):**
+  - Sets `auth_token` HttpOnly cookie (default 7 days, or 30 days if `rememberMe: true`).
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Authentication successful.",
+  "data": {
+    "id": 14,
+    "name": "Rohit Sharma",
+    "email": "rohit@example.com",
+    "role": "user",
+    "avatar": null,
+    "auth_provider": "local",
+    "last_login_at": "2026-11-17T05:05:00.000Z",
+    "created_at": "2026-11-17T05:00:00.000Z"
+  }
+}
+```
+- **Error (`401 Unauthorized`):** Generic message preventing user enumeration.
+```json
+{
+  "success": false,
+  "statusCode": 401,
+  "message": "Invalid email or password.",
+  "error": "Invalid email or password."
+}
+```
+
+### 8.3 Get Current Authenticated Profile
+- **URL:** `/api/v1/auth/me`
+- **Method:** `GET`
+- **Authentication:** Required (`auth_token` cookie or `Authorization: Bearer <token>`)
+- **Success (`200 OK`):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Current session retrieved successfully.",
+  "data": {
+    "id": 14,
+    "name": "Rohit Sharma",
+    "email": "rohit@example.com",
+    "role": "user",
+    "avatar": null,
+    "auth_provider": "local",
+    "last_login_at": "2026-11-17T05:05:00.000Z",
+    "created_at": "2026-11-17T05:00:00.000Z"
+  }
+}
+```
+- **Error (`401 Unauthorized`):**
+```json
+{
+  "success": false,
+  "statusCode": 401,
+  "message": "Authentication required. Please log in.",
+  "error": "Authentication required. Please log in."
+}
+```
+
+### 8.4 Logout
+- **URL:** `/api/v1/auth/logout`
+- **Method:** `POST`
+- **Success (`200 OK`):**
+  - Clears `auth_token` HttpOnly cookie.
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "You have been successfully logged out."
+}
+```
+
+### 8.5 Google OAuth 2.0 Flow
+1. **Initiate Google Sign-In:**
+   - **URL:** `GET /api/v1/auth/google`
+   - Redirects user to Google Accounts consent screen (`https://accounts.google.com/o/oauth2/v2/auth`) with scope `openid email profile`.
+2. **Google Callback:**
+   - **URL:** `GET /api/v1/auth/google/callback?code=...`
+   - Validates authorization code with Google token endpoint.
+   - Verifies profile (`google_id`, `email`, `name`, `avatar`).
+   - If user exists: links Google identity if not already linked, updates `last_login_at`.
+   - If new user: registers new user with `auth_provider: 'google'`.
+   - Sets secure HttpOnly cookie and redirects to frontend `/dashboard` (or `/login?error=...` on failure).
+
+### 8.6 Environment Variables for Authentication
+```env
+# JWT Session Configuration
+JWT_SECRET=your_super_secret_jwt_key_min_32_chars
+JWT_EXPIRES_IN=7d
+JWT_REMEMBER_EXPIRES_IN=30d
+COOKIE_SECRET=your_cookie_signing_secret
+
+# Google OAuth 2.0 Credentials
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:5000/api/v1/auth/google/callback
+```
+
+---
+
+## 9. Consultation Booking System API (Phase 5)
+
+The Consultation Booking System provides transactional, concurrency-safe appointment scheduling across the five sanctuary disciplines.
+
+### Key Architecture & Concurrency Safeguards:
+1. **Advisory Transactional Locking:** `SELECT pg_advisory_xact_lock(...)` serializes concurrent booking requests targeting the same calendar day, eliminating race conditions while allowing independent days to book simultaneously in parallel.
+2. **Row-Level Overlap Exclusion (`SELECT ... FOR UPDATE`):** Transactions verify within PostgreSQL that no active booking (`CONFIRMED` or `PENDING`) overlaps the requested `[slot_start, slot_end]` window.
+3. **Idempotency Protection:** Requests with an `idempotency_key` safely return existing bookings upon network retries without creating duplicates.
+4. **Owner Verification:** Authenticated user identity (`req.user.id`) is enforced on all booking, viewing, cancelling, and rescheduling operations.
+
+---
+
+### 9.1 Get Consultation Types
+- **URL:** `/api/v1/consultations/types`
+- **Method:** `GET`
+- **Protection:** Public
+- **Success (`200 OK`):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Consultation types retrieved successfully",
+  "data": [
+    {
+      "id": "c0a80123-0000-0000-0000-000000000001",
+      "slug": "yoga-wellness",
+      "name": "Restorative Yoga Therapy & Physical Alignment",
+      "description": "Personalized 1-on-1 restorative yoga guidance focusing on rest, calm, physical vitality, and management of conditions including PCOD, diabetes, and hypertension.",
+      "duration_minutes": 60,
+      "buffer_minutes": 15,
+      "price_display": "Complimentary Initial Sanctuary Session",
+      "is_active": true,
+      "display_order": 1
+    }
+  ],
+  "meta": { "count": 5 }
+}
+```
+
+---
+
+### 9.2 Get Available Dates
+- **URL:** `/api/v1/consultations/availability/dates`
+- **Method:** `GET`
+- **Protection:** Public
+- **Query Parameters:**
+  - `type_id` (required): Consultation type UUID or slug
+  - `month` (optional): `YYYY-MM`
+  - `start_date` (optional): `YYYY-MM-DD`
+  - `end_date` (optional): `YYYY-MM-DD`
+  - `timezone` (optional): default `Asia/Kolkata`
+- **Success (`200 OK`):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Available dates retrieved successfully",
+  "data": {
+    "availableDates": ["2026-11-20", "2026-11-21", "2026-11-23"],
+    "consultationType": { "id": "...", "name": "Restorative Yoga Therapy" },
+    "timeZone": "Asia/Kolkata"
+  }
+}
+```
+
+---
+
+### 9.3 Get Available Time Slots
+- **URL:** `/api/v1/consultations/availability`
+- **Method:** `GET`
+- **Protection:** Public
+- **Query Parameters:**
+  - `type_id` (required): Consultation type UUID or slug
+  - `date` (required): `YYYY-MM-DD`
+  - `timezone` (optional): default `Asia/Kolkata`
+- **Success (`200 OK`):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Available time slots retrieved successfully",
+  "data": {
+    "date": "2026-11-20",
+    "timeZone": "Asia/Kolkata",
+    "isAvailable": true,
+    "slots": [
+      {
+        "id": "2026-11-20_0900",
+        "slotStart": "2026-11-20T09:00:00+05:30",
+        "slotEnd": "2026-11-20T10:00:00+05:30",
+        "formattedTime": "9:00 AM - 10:00 AM",
+        "durationMinutes": 60,
+        "available": true
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 9.4 Book Consultation
+- **URL:** `/api/v1/consultations/book`
+- **Method:** `POST`
+- **Protection:** Authenticated (`requireAuth`)
+- **Rate Limit:** 30 requests / 15 minutes (`bookingLimiter`)
+- **Body Schema:**
+```json
+{
+  "type_id": "c0a80123-0000-0000-0000-000000000001",
+  "slot_start": "2026-11-20T09:00:00+05:30",
+  "goals": "Restorative yoga for lower back pain and posture alignment",
+  "notes": "Prefers morning sessions",
+  "phone": "+91 98765 43210",
+  "idempotency_key": "c2a93410-b98a-4933-a3d2-d7b3cf2861e2",
+  "timezone": "Asia/Kolkata"
+}
+```
+- **Success (`201 Created` or `200 OK` for Idempotent Replay):**
+```json
+{
+  "success": true,
+  "statusCode": 201,
+  "message": "Consultation successfully scheduled with Soulfit Sanctuary.",
+  "data": {
+    "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "user_id": "14",
+    "booking_reference": "HP-2026-B8F12A",
+    "status": "CONFIRMED",
+    "slot_start": "2026-11-20T03:30:00.000Z",
+    "slot_end": "2026-11-20T04:30:00.000Z",
+    "timezone": "Asia/Kolkata",
+    "type_name": "Restorative Yoga Therapy & Physical Alignment",
+    "created_at": "2026-11-17T06:00:00.000Z"
+  }
+}
+```
+- **Error (`409 Conflict`):** Returned when slot was booked by another concurrent transaction.
+```json
+{
+  "success": false,
+  "statusCode": 409,
+  "message": "The selected time slot has already been booked by another sanctuary member. Please select another time.",
+  "error": "The selected time slot has already been booked by another sanctuary member. Please select another time."
+}
+```
+
+---
+
+### 9.5 Get User Consultation History
+- **URL:** `/api/v1/consultations/my`
+- **Method:** `GET`
+- **Protection:** Authenticated (`requireAuth`)
+- **Query Parameters:**
+  - `status`: `'upcoming'` | `'past'` | `'all'` | `'confirmed'` | `'cancelled'` (default `'all'`)
+  - `page`: integer >= 1 (default 1)
+  - `limit`: integer (default 20, max 50)
+- **Success (`200 OK`):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Consultations retrieved successfully",
+  "data": [
+    {
+      "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      "booking_reference": "HP-2026-B8F12A",
+      "status": "CONFIRMED",
+      "slot_start": "2026-11-20T03:30:00.000Z",
+      "slot_end": "2026-11-20T04:30:00.000Z",
+      "type_name": "Restorative Yoga Therapy & Physical Alignment"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### 9.6 Get Consultation by ID
+- **URL:** `/api/v1/consultations/:id`
+- **Method:** `GET`
+- **Protection:** Authenticated (`requireAuth` - Owner only)
+- **Success (`200 OK`):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Consultation details retrieved successfully",
+  "data": {
+    "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "booking_reference": "HP-2026-B8F12A",
+    "status": "CONFIRMED",
+    "full_name": "Rohit Sharma",
+    "email": "rohit@example.com",
+    "goals": "Restorative yoga for lower back pain",
+    "slot_start": "2026-11-20T03:30:00.000Z",
+    "slot_end": "2026-11-20T04:30:00.000Z"
+  }
+}
+```
+
+---
+
+### 9.7 Cancel Consultation
+- **URL:** `/api/v1/consultations/:id/cancel`
+- **Method:** `PATCH`
+- **Protection:** Authenticated (`requireAuth` - Owner only)
+- **Policy:** Minimum 2 hours advance notice before session start.
+- **Body Schema:**
+```json
+{
+  "reason": "Travel schedule conflict"
+}
+```
+- **Success (`200 OK`):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Consultation cancelled successfully.",
+  "data": {
+    "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "status": "CANCELLED",
+    "cancelled_at": "2026-11-17T06:15:00.000Z",
+    "cancellation_reason": "Travel schedule conflict"
+  }
+}
+```
+
+---
+
+### 9.8 Reschedule Consultation
+- **URL:** `/api/v1/consultations/:id/reschedule`
+- **Method:** `PATCH`
+- **Protection:** Authenticated (`requireAuth` - Owner only)
+- **Policy:** Minimum 2 hours advance notice before session start.
+- **Body Schema:**
+```json
+{
+  "new_slot_start": "2026-11-24T10:00:00+05:30",
+  "timezone": "Asia/Kolkata"
+}
+```
+- **Success (`200 OK`):** Atomically releases old slot and confirms new slot.
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Consultation rescheduled successfully.",
+  "data": {
+    "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "status": "CONFIRMED",
+    "slot_start": "2026-11-24T04:30:00.000Z",
+    "slot_end": "2026-11-24T05:30:00.000Z"
+  }
+}
+```
+
+

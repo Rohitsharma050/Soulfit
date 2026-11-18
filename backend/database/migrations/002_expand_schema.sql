@@ -90,7 +90,7 @@ CREATE TRIGGER trg_articles_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_timestamp_column();
 
-COMMENT ON TABLE articles IS 'Reflections, wisdom guides, and published dispatches by Rashmi';
+COMMENT ON TABLE articles IS 'Reflections, wisdom guides, and published dispatches by Soulfit Guidance';
 
 -- 4. EXPAND SUBSCRIBERS TABLE
 ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS unsubscribe_token_hash VARCHAR(255);

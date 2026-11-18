@@ -1,25 +1,153 @@
-/**
- * Auth Controller (Scaffold for Future Phase)
- * Full Google OAuth 2.0 and JWT session management will be implemented in Phase 5.
- */
+import authService from '../services/auth.service.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { getAuthCookieOptions, getClearAuthCookieOptions } from '../utils/jwt.js';
+import { config } from '../config/env.js';
 
-export const getAuthStatus = async (req, res, next) => {
+/**
+ * Registers a new user with name, email, and password.
+ * POST /api/v1/auth/register
+ */
+export const register = async (req, res, next) => {
   try {
-    return res.status(200).json({
-      status: 'success',
-      data: {
-        authenticated: false,
-        message: 'Authentication module scaffolded. Full Google OAuth 2.0 integration scheduled for Phase 5.',
-      },
-    });
+    const { name, email, password } = req.body;
+    const result = await authService.register({ name, email, password });
+
+    // Set secure HttpOnly session cookie
+    res.cookie(config.cookie.name, result.token, getAuthCookieOptions(false));
+
+    return ApiResponse.created(
+      res,
+      { user: result.user },
+      'Registration successful. Welcome to The Harmony Project sanctuary.'
+    );
   } catch (error) {
     next(error);
   }
 };
 
-export const googleAuthCallback = async (req, res, next) => {
-  return res.status(501).json({
-    status: 'fail',
-    message: 'Google OAuth callback handler will be implemented in Phase 5.',
-  });
+/**
+ * Authenticates user credentials and establishes a session.
+ * POST /api/v1/auth/login
+ */
+export const login = async (req, res, next) => {
+  try {
+    const { email, password, rememberMe } = req.body;
+    const result = await authService.login({ email, password, rememberMe });
+
+    // Set secure HttpOnly session cookie with rememberMe duration if requested
+    res.cookie(config.cookie.name, result.token, getAuthCookieOptions(result.rememberMe));
+
+    return ApiResponse.success(
+      res,
+      { user: result.user },
+      'Welcome back. Authentication successful.'
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Initiates Google OAuth 2.0 flow.
+ * GET /api/v1/auth/google
+ */
+export const getGoogleAuth = async (req, res, next) => {
+  try {
+    const state = req.query.state || 'harmony_auth_state';
+    const authUrl = authService.getGoogleAuthUrl(state);
+
+    // If client requested JSON (e.g. from single-page app button or API test)
+    if (req.query.json === 'true' || req.headers.accept?.includes('application/json')) {
+      return ApiResponse.success(res, { url: authUrl }, 'Google OAuth authorization URL generated.');
+    }
+
+    // Direct browser redirect to Google consent screen
+    return res.redirect(authUrl);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Handles Google OAuth redirect callback.
+ * GET /api/v1/auth/google/callback
+ */
+export const googleCallback = async (req, res, next) => {
+  try {
+    const { code, error, error_description } = req.query;
+
+    if (error) {
+      const reason = error_description || error;
+      return res.redirect(`${config.frontendUrl}/login?error=${encodeURIComponent(reason)}`);
+    }
+
+    const result = await authService.handleGoogleCallback(code);
+
+    // Set secure HttpOnly session cookie
+    res.cookie(config.cookie.name, result.token, getAuthCookieOptions(false));
+
+    // Redirect authenticated user to frontend dashboard
+    return res.redirect(`${config.frontendUrl}/dashboard?auth=success`);
+  } catch (error) {
+    // Graceful redirection to frontend login with error indicator
+    const errorMessage = error.message || 'Google authentication failed';
+    return res.redirect(`${config.frontendUrl}/login?error=${encodeURIComponent(errorMessage)}`);
+  }
+};
+
+/**
+ * Retrieves the currently authenticated user's profile.
+ * GET /api/v1/auth/me
+ */
+export const getMe = async (req, res, next) => {
+  try {
+    // req.user is guaranteed by requireAuth middleware
+    return ApiResponse.success(
+      res,
+      { user: req.user },
+      'Current authenticated user profile retrieved successfully.'
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Terminates user session and clears the HttpOnly cookie.
+ * POST /api/v1/auth/logout
+ */
+export const logout = async (req, res, next) => {
+  try {
+    res.clearCookie(config.cookie.name, getClearAuthCookieOptions());
+    return ApiResponse.success(res, null, 'Logged out successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Legacy status check for backward compatibility.
+ * GET /api/v1/auth/status
+ */
+export const getAuthStatus = async (req, res) => {
+  const user = req.user || null;
+  return ApiResponse.success(res, {
+    authenticated: Boolean(user),
+    user,
+  }, 'Auth status retrieved.');
+};
+
+/**
+ * POST /api/v1/auth/google (Credential or Token callback fallback)
+ */
+export const googleAuthCallback = googleCallback;
+
+export default {
+  register,
+  login,
+  getGoogleAuth,
+  googleCallback,
+  getMe,
+  logout,
+  getAuthStatus,
 };

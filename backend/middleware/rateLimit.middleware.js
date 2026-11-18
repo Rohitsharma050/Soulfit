@@ -35,6 +35,23 @@ export const newsletterLimiter = rateLimit({
 });
 
 /**
+ * Rate Limiter for Authentication Endpoints (Login & Register)
+ * Protects against credential stuffing and brute force attacks.
+ */
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Up to 30 attempts per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    statusCode: 429,
+    message: 'Too many authentication attempts from this IP. Please try again after 15 minutes.',
+    errors: [{ field: 'rate_limit', message: 'Authentication rate limit exceeded' }],
+  },
+});
+
+/**
  * General Public API Rate Limiter
  * Applied across all public read endpoints (/services, /articles).
  */
@@ -50,3 +67,28 @@ export const publicApiLimiter = rateLimit({
     errors: [{ field: 'rate_limit', message: 'Rate limit exceeded' }],
   },
 });
+
+/**
+ * Rate Limiter for Consultation Bookings & Availability Probes
+ * Protects against reservation hoarding, spam bookings, and slot enumeration.
+ */
+export const bookingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Up to 30 booking requests per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    statusCode: 429,
+    message: 'Too many booking requests from this IP. Please wait 15 minutes before submitting again.',
+    errors: [{ field: 'rate_limit', message: 'Booking rate limit exceeded' }],
+  },
+});
+
+export default {
+  contactLimiter,
+  newsletterLimiter,
+  authLimiter,
+  bookingLimiter,
+  publicApiLimiter,
+};

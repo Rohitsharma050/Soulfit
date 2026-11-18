@@ -46,19 +46,19 @@ export default function Contact() {
   };
 
   return (
-    <div className="py-16 md:py-24 space-y-16">
+    <div className="py-16 md:py-24 space-y-16 bg-sand">
       <Container size="default">
         <SectionHeading
-          overline="Direct Connect"
+          overline="Direct Sanctuary Connect"
           title="Begin the Conversation for"
           titleAccent="Balanced Living"
-          description="Have questions about our five pillars, specialized restorative yoga, or spatial Vastu guidance? We warmly invite you to reach out."
+          description="Have questions about our restorative yoga sessions, condition management (PCOD, Diabetes, Hypertension), or spatial Vastu guidance? We warmly invite you to reach out."
           className="mb-12"
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Contact Details & Sanctuary Values (Span 5) */}
-          <div className="lg:col-span-5 bg-sand-50 rounded-2xl border border-beige p-8 shadow-soft space-y-6">
+          <div className="lg:col-span-5 bg-sand-50 rounded-2xl border-2 border-forest/15 p-8 shadow-soft space-y-6">
             <h3 className="font-serif text-2xl text-forest font-medium">
               Sanctuary Communications
             </h3>
@@ -66,42 +66,42 @@ export default function Contact() {
               We approach every inquiry with patience and care. Whether you are seeking restorative movement for a demanding week or deep spatial alignment for your residence, we are here to support your path.
             </p>
 
-            <div className="space-y-4 pt-4 border-t border-beige/60 text-xs text-forest/85">
+            <div className="space-y-4 pt-4 border-t border-forest/10 text-xs text-forest/85">
               <div className="flex items-start gap-3">
-                <Mail className="w-4 h-4 text-terracotta flex-shrink-0 mt-0.5" />
+                <Mail className="w-4 h-4 text-forest flex-shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold block text-forest">Inquiries &amp; Consultations:</span>
-                  <span className="text-olive">guidance@harmonyproject.com</span>
+                  <span className="text-forest/70">guidance@harmonyproject.com</span>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <Clock className="w-4 h-4 text-terracotta flex-shrink-0 mt-0.5" />
+                <Clock className="w-4 h-4 text-forest flex-shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold block text-forest">Operating Rhythm:</span>
-                  <span className="text-olive">Monday &ndash; Saturday &bull; 08:00 AM &ndash; 07:00 PM IST</span>
+                  <span className="text-forest/70">Monday &ndash; Saturday &bull; 08:00 AM &ndash; 07:00 PM IST</span>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-terracotta flex-shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-forest flex-shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold block text-forest">Sanctuary Presence:</span>
-                  <span className="text-olive">Holistic Wellness Center &bull; Hybrid Sessions (Online &amp; In-Person)</span>
+                  <span className="text-forest/70">Soulfit Wellness Center &bull; Hybrid Sessions (Online &amp; In-Person)</span>
                 </div>
               </div>
             </div>
 
-            <blockquote className="border-l-2 border-gold pl-3 py-1 text-xs font-serif italic text-olive">
+            <blockquote className="border-l-2 border-forest pl-3 py-1 text-xs font-serif italic text-forest/80">
               “Come as you are &mdash; tired, busy, and stretched &mdash; and leave feeling lighter, calmer, and ready to begin afresh.”
             </blockquote>
           </div>
 
           {/* Contact Form (Span 7) */}
-          <div className="lg:col-span-7 bg-sand-50 rounded-2xl border border-beige p-8 sm:p-10 shadow-soft">
+          <div className="lg:col-span-7 bg-sand-50 rounded-2xl border-2 border-forest/15 p-8 sm:p-10 shadow-soft">
             {status === 'success' ? (
               <div className="text-center py-10 space-y-4">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <h4 className="font-serif text-2xl text-forest font-medium">Message Received</h4>
@@ -111,7 +111,7 @@ export default function Contact() {
                 <button
                   type="button"
                   onClick={() => setStatus('idle')}
-                  className="mt-4 px-5 py-2 rounded-brand bg-forest text-sand-light text-xs uppercase tracking-wider font-semibold"
+                  className="mt-4 px-5 py-2 rounded-brand bg-forest text-sand-light text-xs uppercase tracking-wider font-semibold hover:bg-forest-light transition-colors"
                 >
                   Send Another Inquiry
                 </button>
@@ -138,7 +138,7 @@ export default function Contact() {
                       onChange={handleChange}
                       placeholder="Full Name"
                       required
-                      className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-beige text-forest focus:outline-none focus:ring-2 focus:ring-terracotta"
+                      className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-forest/15 text-forest focus:outline-none focus:ring-2 focus:ring-forest"
                     />
                   </div>
 
@@ -154,7 +154,7 @@ export default function Contact() {
                       onChange={handleChange}
                       placeholder="name@domain.com"
                       required
-                      className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-beige text-forest focus:outline-none focus:ring-2 focus:ring-terracotta"
+                      className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-forest/15 text-forest focus:outline-none focus:ring-2 focus:ring-forest"
                     />
                   </div>
                 </div>
@@ -171,7 +171,7 @@ export default function Contact() {
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="+91..."
-                      className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-beige text-forest focus:outline-none focus:ring-2 focus:ring-terracotta"
+                      className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-forest/15 text-forest focus:outline-none focus:ring-2 focus:ring-forest"
                     />
                   </div>
 
@@ -185,8 +185,8 @@ export default function Contact() {
                       name="subject"
                       value={formData.subject}
                       onChange={handleChange}
-                      placeholder="e.g., Vastu Residential Review"
-                      className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-beige text-forest focus:outline-none focus:ring-2 focus:ring-terracotta"
+                      placeholder="e.g., Prenatal Restorative Yoga"
+                      className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-forest/15 text-forest focus:outline-none focus:ring-2 focus:ring-forest"
                     />
                   </div>
                 </div>
@@ -203,7 +203,7 @@ export default function Contact() {
                     onChange={handleChange}
                     placeholder="How may we guide your wellness journey?"
                     required
-                    className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-beige text-forest focus:outline-none focus:ring-2 focus:ring-terracotta resize-y"
+                    className="w-full px-3.5 py-2 text-sm rounded-brand bg-sand border border-forest/15 text-forest focus:outline-none focus:ring-2 focus:ring-forest resize-y"
                   />
                 </div>
 
@@ -211,11 +211,11 @@ export default function Contact() {
                   <button
                     type="submit"
                     disabled={status === 'loading'}
-                    className="w-full inline-flex items-center justify-center px-6 py-3 rounded-brand bg-forest hover:bg-forest-light text-sand font-medium text-sm transition-colors shadow-soft gap-2 disabled:opacity-60"
+                    className="w-full inline-flex items-center justify-center px-6 py-3 rounded-brand bg-forest hover:bg-forest-light text-sand-light font-semibold text-sm transition-colors shadow-forest gap-2 disabled:opacity-60"
                   >
                     {status === 'loading' ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-sand" />
+                        <Loader2 className="w-4 h-4 animate-spin text-sand-light" />
                         <span>Sending...</span>
                       </>
                     ) : (
