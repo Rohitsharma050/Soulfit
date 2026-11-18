@@ -54,6 +54,21 @@ export const login = async (req, res, next) => {
 export const getGoogleAuth = async (req, res, next) => {
   try {
     const state = req.query.state || 'harmony_auth_state';
+
+    // If Google OAuth credentials are not configured in backend/.env
+    if (!config.google.isConfigured) {
+      if (req.query.json === 'true' || req.headers.accept?.includes('application/json')) {
+        return res.status(503).json({
+          success: false,
+          statusCode: 503,
+          message:
+            'Google Sign-In is currently not configured on this server. Please configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env.',
+        });
+      }
+      const returnTarget = (req.headers.referer && req.headers.referer.includes('/register')) ? 'register' : 'login';
+      return res.redirect(`${config.frontendUrl}/${returnTarget}?error=google_not_configured`);
+    }
+
     const authUrl = authService.getGoogleAuthUrl(state);
 
     // If client requested JSON (e.g. from single-page app button or API test)
@@ -64,7 +79,13 @@ export const getGoogleAuth = async (req, res, next) => {
     // Direct browser redirect to Google consent screen
     return res.redirect(authUrl);
   } catch (error) {
-    next(error);
+    if (req.query.json === 'true' || req.headers.accept?.includes('application/json')) {
+      return next(error);
+    }
+    const returnTarget = (req.headers.referer && req.headers.referer.includes('/register')) ? 'register' : 'login';
+    return res.redirect(
+      `${config.frontendUrl}/${returnTarget}?error=${encodeURIComponent(error.message || 'google_auth_failed')}`
+    );
   }
 };
 

@@ -21,9 +21,10 @@ export const registerSchema = z
       .regex(/[a-zA-Z]/, { message: 'Password must contain at least one letter' })
       .regex(/[0-9]/, { message: 'Password must contain at least one number' }),
     confirmPassword: z
-      .string({ required_error: 'Please confirm your password' }),
+      .string()
+      .optional(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
+  .refine((data) => !data.confirmPassword || data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
   });

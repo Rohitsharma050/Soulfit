@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/api';
 import Container from '../components/common/Container';
@@ -8,6 +8,7 @@ import { Eye, EyeOff, Lock, Mail, User, AlertCircle, Loader2, ArrowRight, Check,
 export default function Register() {
   const { user, register, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -21,6 +22,25 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+
+  // Read query params for potential OAuth error redirects
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const oauthError = params.get('error');
+    if (oauthError) {
+      if (oauthError === 'oauth_cancelled') {
+        setErrorMessage('Google authentication was cancelled.');
+      } else if (oauthError === 'oauth_failed') {
+        setErrorMessage('Google sign-in could not be completed. Please try again or use your password.');
+      } else if (oauthError === 'google_not_configured' || oauthError === 'oauth_unconfigured') {
+        setErrorMessage(
+          'Google Sign-In is awaiting credentials in backend/.env. Please register with your email and password, or configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.'
+        );
+      } else {
+        setErrorMessage(decodeURIComponent(oauthError) || 'Authentication could not be completed. Please try again.');
+      }
+    }
+  }, [location.search]);
 
   // If already authenticated, redirect to dashboard
   useEffect(() => {

@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config/env.js';
 import { closeDbPool } from './config/db.js';
 import apiV1Routes from './routes/index.routes.js';
+import authRoutes from './routes/auth.routes.js';
 import notFoundHandler from './middleware/notFound.middleware.js';
 import errorHandler from './middleware/error.middleware.js';
 
@@ -64,6 +65,7 @@ const apiLimiter = rateLimit({
   },
 });
 app.use('/api', apiLimiter);
+app.use('/auth', apiLimiter);
 
 // 5. Basic Application Health Check Endpoint
 app.get('/health', (req, res) => {
@@ -75,8 +77,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-// 6. Centralized API v1 Routes
+// 6. Centralized API Routes (Primary v1 and aliases for frontend route resilience)
 app.use('/api/v1', apiV1Routes);
+app.use('/api', apiV1Routes);
+app.use('/auth', authRoutes);
 
 // 7. 404 Route Handler for undefined routes
 app.use(notFoundHandler);

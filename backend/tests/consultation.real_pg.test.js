@@ -58,15 +58,25 @@ describe('REAL PostgreSQL Concurrency & Transaction Row-Locking Tests', () => {
         });
       }
 
-      console.log('[REAL PG TEST] Starting real PostgreSQL 18 on port', PG_PORT);
+      let alreadyRunning = false;
       try {
-        spawnSync(pgCtlPath, ['-D', testClusterDir, '-l', 'nul', '-o', `-p ${PG_PORT}`, '-w', 'start'], {
-          stdio: 'ignore',
-          windowsHide: true,
-        });
-        serverProcessStarted = true;
-      } catch (e) {
-        // May already be running from a previous check
+        const statusRes = spawnSync(pgCtlPath, ['-D', testClusterDir, 'status'], { stdio: 'pipe' });
+        if (statusRes.stdout && statusRes.stdout.toString().includes('server is running')) {
+          alreadyRunning = true;
+        }
+      } catch (e) {}
+
+      if (!alreadyRunning) {
+        console.log('[REAL PG TEST] Starting real PostgreSQL 18 on port', PG_PORT);
+        try {
+          spawnSync(pgCtlPath, ['-D', testClusterDir, '-l', 'nul', '-o', `-p ${PG_PORT}`, '-w', 'start'], {
+            stdio: 'ignore',
+            windowsHide: true,
+          });
+          serverProcessStarted = true;
+        } catch (e) {
+          // May already be running from a previous check
+        }
       }
 
       // Wait 1.5 seconds for socket ready

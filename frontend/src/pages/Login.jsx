@@ -33,8 +33,12 @@ export default function Login() {
         setErrorMessage('Google authentication was cancelled.');
       } else if (oauthError === 'oauth_failed') {
         setErrorMessage('Google sign-in could not be completed. Please try again or use your password.');
+      } else if (oauthError === 'google_not_configured' || oauthError === 'oauth_unconfigured') {
+        setErrorMessage(
+          'Google Sign-In is awaiting credentials in backend/.env. Please sign in with email/password, or configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.'
+        );
       } else {
-        setErrorMessage('Authentication could not be completed. Please try again.');
+        setErrorMessage(decodeURIComponent(oauthError) || 'Authentication could not be completed. Please try again.');
       }
     }
   }, [location.search]);

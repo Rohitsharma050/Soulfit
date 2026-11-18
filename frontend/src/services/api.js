@@ -259,7 +259,11 @@ export const authService = {
 
   getGoogleAuthUrl() {
     const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-    return `${base}/auth/google`;
+    const cleanBase = base.trim().replace(/\/+$/, '');
+    if ((cleanBase.startsWith('http://') || cleanBase.startsWith('https://')) && !cleanBase.includes('/api')) {
+      return `${cleanBase}/api/v1/auth/google`;
+    }
+    return `${cleanBase}/auth/google`;
   },
 };
 
