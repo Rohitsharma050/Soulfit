@@ -12,10 +12,15 @@ import errorHandler from './middleware/error.middleware.js';
 
 const app = express();
 
-// 1. Security Headers via Helmet
+// 1. Trust proxy when running in production or behind a reverse proxy (e.g. Render, Vercel)
+if (config.isProduction || process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
+
+// 2. Security Headers via Helmet
 app.use(helmet());
 
-// 2. CORS Configuration
+// 3. CORS Configuration
 const configuredOrigins = config.frontendUrl
   ? config.frontendUrl.split(',').map((url) => url.trim().replace(/\/+$/, ''))
   : [];
@@ -36,14 +41,22 @@ app.use(
       }
       
       const normalizedOrigin = origin.replace(/\/+$/, '');
-      if (allowedOrigins.has(normalizedOrigin) || normalizedOrigin.endsWith('.vercel.app')) {
+      let isVercelSubdomain = false;
+      try {
+        const parsed = new URL(normalizedOrigin);
+        isVercelSubdomain = parsed.hostname.endsWith('.vercel.app');
+      } catch (e) {
+        isVercelSubdomain = normalizedOrigin.endsWith('.vercel.app');
+      }
+
+      if (allowedOrigins.has(normalizedOrigin) || isVercelSubdomain) {
         return callback(null, true);
       }
       return callback(new Error(`CORS policy does not allow access from origin: ${origin}`), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   })
 );
 

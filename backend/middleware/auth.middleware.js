@@ -51,16 +51,29 @@ export function sanitizeUser(user) {
  */
 export async function requireAuth(req, res, next) {
   try {
+    const hasCookieHeader = Boolean(req.headers.cookie);
+    const hasAuthCookie = Boolean(req.cookies && req.cookies[config.cookie.name]);
+    const hasAuthHeader = Boolean(req.headers.authorization && req.headers.authorization.startsWith('Bearer '));
+
     const token = extractToken(req);
 
     if (!token) {
+      if (config.isDevelopment || process.env.AUTH_DEBUG === 'true') {
+        console.warn(`[AUTH] Authentication required on ${req.method} ${req.originalUrl || req.path} | hasCookieHeader=${hasCookieHeader} | hasAuthCookie=${hasAuthCookie} | hasAuthHeader=${hasAuthHeader}`);
+      }
       throw new ApiError(401, 'Authentication required. Please log in.');
     }
 
     let decoded;
     try {
       decoded = verifyToken(token);
+      if (process.env.AUTH_DEBUG === 'true') {
+        console.log(`[AUTH] JWT verified successfully for ${req.method} ${req.originalUrl || req.path}`);
+      }
     } catch (err) {
+      if (config.isDevelopment || process.env.AUTH_DEBUG === 'true') {
+        console.warn(`[AUTH] Token verification failed on ${req.method} ${req.originalUrl || req.path} | error=${err.name}`);
+      }
       if (err.name === 'TokenExpiredError') {
         throw new ApiError(401, 'Your session has expired. Please log in again.');
       }

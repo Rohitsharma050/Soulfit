@@ -21,13 +21,23 @@ function validateConfig() {
   const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
   const COOKIE_NAME = process.env.COOKIE_NAME || 'auth_token';
 
+  // Cross-site cookie configuration:
+  // Production (Vercel <-> Render cross-domain) defaults to SameSite=None and Secure=true.
+  // Local development/test defaults to SameSite=Lax and Secure=false so HTTP localhost works.
+  const isProd = NODE_ENV === 'production';
+  const COOKIE_SAMESITE = process.env.COOKIE_SAMESITE || (isProd ? 'none' : 'lax');
+  const COOKIE_SECURE = process.env.COOKIE_SECURE !== undefined
+    ? process.env.COOKIE_SECURE === 'true'
+    : isProd;
+  const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
+
   // Google OAuth credentials
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
   const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
   const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || `${BACKEND_URL}/api/v1/auth/google/callback`;
 
   return {
-    isProduction: NODE_ENV === 'production',
+    isProduction: isProd,
     isDevelopment: NODE_ENV === 'development',
     isTest: NODE_ENV === 'test',
     env: NODE_ENV,
@@ -42,6 +52,9 @@ function validateConfig() {
     cookie: {
       name: COOKIE_NAME,
       maxAgeMs: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+      sameSite: COOKIE_SAMESITE.toLowerCase(),
+      secure: COOKIE_SECURE,
+      domain: COOKIE_DOMAIN,
     },
     google: {
       clientId: GOOGLE_CLIENT_ID,

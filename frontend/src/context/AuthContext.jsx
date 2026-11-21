@@ -8,19 +8,45 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Check current session from HttpOnly cookie on initial mount
+  // Check current session on initial mount (supports HttpOnly cookie, URL token handoff, and stored token)
   const checkAuth = useCallback(async () => {
     try {
       setLoading(true);
+
+      // 1. Capture token from OAuth redirect query param if present (cross-domain handoff)
+      if (typeof window !== 'undefined' && window.location.search) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthToken = urlParams.get('token');
+        if (oauthToken) {
+          localStorage.setItem('soulfit_auth_token', oauthToken);
+          urlParams.delete('token');
+          const remaining = urlParams.toString();
+          const cleanUrl = window.location.pathname + (remaining ? `?${remaining}` : '') + window.location.hash;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      }
+
       const res = await authService.getMe();
       if (res.success && res.data) {
-        setUser(res.data);
+        const userObj = res.data.user || res.data;
+        setUser(userObj);
+        if (res.data.token) {
+          localStorage.setItem('soulfit_auth_token', res.data.token);
+        }
         setError(null);
       } else {
         setUser(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('soulfit_auth_token');
+          localStorage.removeItem('harmony_auth_token');
+        }
       }
     } catch (err) {
       setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('soulfit_auth_token');
+        localStorage.removeItem('harmony_auth_token');
+      }
     } finally {
       setLoading(false);
     }
@@ -35,9 +61,13 @@ export function AuthProvider({ children }) {
     setError(null);
     const res = await authService.login({ email, password, rememberMe });
     if (res.success && res.data) {
-      setUser(res.data);
+      const userObj = res.data.user || res.data;
+      setUser(userObj);
+      if (res.data.token) {
+        localStorage.setItem('soulfit_auth_token', res.data.token);
+      }
       setError(null);
-      return { success: true, user: res.data };
+      return { success: true, user: userObj };
     }
     const message = res.error || 'Authentication failed. Please verify your credentials.';
     setError(message);
@@ -49,9 +79,13 @@ export function AuthProvider({ children }) {
     setError(null);
     const res = await authService.register({ name, email, password, confirmPassword });
     if (res.success && res.data) {
-      setUser(res.data);
+      const userObj = res.data.user || res.data;
+      setUser(userObj);
+      if (res.data.token) {
+        localStorage.setItem('soulfit_auth_token', res.data.token);
+      }
       setError(null);
-      return { success: true, user: res.data };
+      return { success: true, user: userObj };
     }
     const message = res.error || 'Registration failed. Please check your details.';
     setError(message);
@@ -66,6 +100,10 @@ export function AuthProvider({ children }) {
       // Proceed with local state clearing even if network fails
       console.error('Logout error:', err);
     } finally {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('soulfit_auth_token');
+        localStorage.removeItem('harmony_auth_token');
+      }
       setUser(null);
       setError(null);
     }

@@ -32,13 +32,27 @@ export function getAuthCookieOptions(rememberMe = false) {
     ? 30 * 24 * 60 * 60 * 1000 // 30 days
     : config.cookie.maxAgeMs; // 7 days default
 
-  return {
+  const sameSite = config.cookie.sameSite;
+  const secure = config.cookie.secure;
+
+  const options = {
     httpOnly: true,
-    secure: config.isProduction,
-    sameSite: 'lax',
+    secure,
+    sameSite,
     path: '/',
     maxAge,
   };
+
+  if (config.cookie.domain) {
+    options.domain = config.cookie.domain;
+  }
+
+  // Support partitioned cookies in modern Chromium browsers when cross-site
+  if (sameSite === 'none' && secure) {
+    options.partitioned = true;
+  }
+
+  return options;
 }
 
 /**
@@ -46,10 +60,23 @@ export function getAuthCookieOptions(rememberMe = false) {
  * @returns {import('express').CookieOptions}
  */
 export function getClearAuthCookieOptions() {
-  return {
+  const sameSite = config.cookie.sameSite;
+  const secure = config.cookie.secure;
+
+  const options = {
     httpOnly: true,
-    secure: config.isProduction,
-    sameSite: 'lax',
+    secure,
+    sameSite,
     path: '/',
   };
+
+  if (config.cookie.domain) {
+    options.domain = config.cookie.domain;
+  }
+
+  if (sameSite === 'none' && secure) {
+    options.partitioned = true;
+  }
+
+  return options;
 }

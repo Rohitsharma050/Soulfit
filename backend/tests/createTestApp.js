@@ -156,13 +156,13 @@ export async function createTestApp() {
   apiRouter.post('/auth/register', validateRegister, asyncHandler(async (req, res) => {
     const result = await testAuthService.register(req.body);
     res.cookie(config.cookie.name, result.token, getAuthCookieOptions(false));
-    return ApiResponse.created(res, { user: result.user }, 'Registration successful.');
+    return ApiResponse.created(res, { user: result.user, token: result.token }, 'Registration successful.');
   }));
 
   apiRouter.post('/auth/login', validateLogin, asyncHandler(async (req, res) => {
     const result = await testAuthService.login(req.body);
     res.cookie(config.cookie.name, result.token, getAuthCookieOptions(result.rememberMe));
-    return ApiResponse.success(res, { user: result.user }, 'Login successful.');
+    return ApiResponse.success(res, { user: result.user, token: result.token }, 'Login successful.');
   }));
 
   apiRouter.get('/auth/google', asyncHandler(async (req, res) => {
@@ -188,14 +188,14 @@ export async function createTestApp() {
     try {
       const result = await testAuthService.handleGoogleCallback(code);
       res.cookie(config.cookie.name, result.token, getAuthCookieOptions(false));
-      return res.redirect(`${config.frontendUrl}/dashboard?auth=success`);
+      return res.redirect(`${config.frontendUrl}/dashboard?auth=success&token=${encodeURIComponent(result.token)}`);
     } catch (err) {
       return res.redirect(`${config.frontendUrl}/login?error=${encodeURIComponent(err.message)}`);
     }
   }));
 
   apiRouter.get('/auth/me', testRequireAuth, asyncHandler(async (req, res) => {
-    return ApiResponse.success(res, { user: req.user }, 'Profile retrieved.');
+    return ApiResponse.success(res, { user: req.user, token: extractToken(req) || undefined }, 'Profile retrieved.');
   }));
 
   apiRouter.post('/auth/logout', asyncHandler(async (req, res) => {

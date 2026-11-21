@@ -24,4 +24,19 @@ export const apiClient = axios.create({
   timeout: 10000,
 });
 
+// Request interceptor: attaches Bearer token if present (ensures authentication succeeds
+// even when cross-domain third-party cookie restrictions or ITP block HttpOnly cookies)
+apiClient.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('soulfit_auth_token') || localStorage.getItem('harmony_auth_token');
+      if (token && !config.headers.Authorization) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 export default apiClient;

@@ -1,6 +1,7 @@
 import authService from '../services/auth.service.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { getAuthCookieOptions, getClearAuthCookieOptions } from '../utils/jwt.js';
+import { extractToken } from '../middleware/auth.middleware.js';
 import { config } from '../config/env.js';
 
 /**
@@ -17,7 +18,7 @@ export const register = async (req, res, next) => {
 
     return ApiResponse.created(
       res,
-      { user: result.user },
+      { user: result.user, token: result.token },
       'Registration successful. Welcome to The Harmony Project sanctuary.'
     );
   } catch (error) {
@@ -39,7 +40,7 @@ export const login = async (req, res, next) => {
 
     return ApiResponse.success(
       res,
-      { user: result.user },
+      { user: result.user, token: result.token },
       'Welcome back. Authentication successful.'
     );
   } catch (error) {
@@ -107,8 +108,8 @@ export const googleCallback = async (req, res, next) => {
     // Set secure HttpOnly session cookie
     res.cookie(config.cookie.name, result.token, getAuthCookieOptions(false));
 
-    // Redirect authenticated user to frontend dashboard
-    return res.redirect(`${config.frontendUrl}/dashboard?auth=success`);
+    // Redirect authenticated user to frontend dashboard with token handoff for cross-domain cookie resiliency
+    return res.redirect(`${config.frontendUrl}/dashboard?auth=success&token=${encodeURIComponent(result.token)}`);
   } catch (error) {
     // Graceful redirection to frontend login with error indicator
     const errorMessage = error.message || 'Google authentication failed';
@@ -123,9 +124,10 @@ export const googleCallback = async (req, res, next) => {
 export const getMe = async (req, res, next) => {
   try {
     // req.user is guaranteed by requireAuth middleware
+    const token = extractToken(req);
     return ApiResponse.success(
       res,
-      { user: req.user },
+      { user: req.user, token: token || undefined },
       'Current authenticated user profile retrieved successfully.'
     );
   } catch (error) {
