@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model articles {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title        String    @db.VarChar(255)
+  slug         String    @unique @db.VarChar(255)
+  excerpt      String?
+  content      String
+  cover_image  String?
+  category     String?   @db.VarChar(100)
+  author_name  String?   @db.VarChar(150)
+  reading_time Int?      @default(5)
+  status       String    @default("DRAFT") @db.VarChar(30)
+  published_at DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([category], map: "idx_articles_category")
+  @@index([slug], map: "idx_articles_slug")
+  @@index([status], map: "idx_articles_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model availability_overrides {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  consultation_type_id String?             @db.Uuid
+  override_date        DateTime            @db.Date
+  is_available         Boolean             @default(false)
+  start_time           DateTime?           @db.Time(6)
+  end_time             DateTime?           @db.Time(6)
+  reason               String?             @db.VarChar(255)
+  created_at           DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime            @default(now()) @db.Timestamptz(6)
+  consultation_types   consultation_types? @relation(fields: [consultation_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([override_date], map: "idx_availability_overrides_date")
+  @@index([consultation_type_id], map: "idx_availability_overrides_type")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model availability_rules {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  consultation_type_id String?             @db.Uuid
+  day_of_week          Int
+  start_time           DateTime            @db.Time(6)
+  end_time             DateTime            @db.Time(6)
+  break_start          DateTime?           @db.Time(6)
+  break_end            DateTime?           @db.Time(6)
+  is_active            Boolean             @default(true)
+  created_at           DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime            @default(now()) @db.Timestamptz(6)
+  consultation_types   consultation_types? @relation(fields: [consultation_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_availability_rules_active")
+  @@index([day_of_week], map: "idx_availability_rules_day")
+  @@index([consultation_type_id], map: "idx_availability_rules_type")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model consultation_types {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                   String                   @unique @db.VarChar(150)
+  name                   String                   @db.VarChar(150)
+  description            String?
+  duration_minutes       Int                      @default(60)
+  buffer_minutes         Int                      @default(15)
+  price_display          String?                  @default("Complimentary Sanctuary Guidance") @db.VarChar(50)
+  is_active              Boolean                  @default(true)
+  display_order          Int                      @default(0)
+  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  availability_overrides availability_overrides[]
+  availability_rules     availability_rules[]
+  consultations          consultations[]
+
+  @@index([is_active], map: "idx_consultation_types_active")
+  @@index([display_order], map: "idx_consultation_types_order")
+  @@index([slug], map: "idx_consultation_types_slug")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model consultations {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String?             @db.Uuid
+  full_name            String              @db.VarChar(150)
+  email                String              @db.VarChar(255)
+  phone                String?             @db.VarChar(20)
+  pillar_interest      String              @db.VarChar(100)
+  goals                String?
+  slot_start           DateTime?           @db.Timestamptz(6)
+  slot_end             DateTime?           @db.Timestamptz(6)
+  timezone             String?             @default("UTC") @db.VarChar(100)
+  status               String              @default("PENDING") @db.VarChar(30)
+  created_at           DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime            @default(now()) @db.Timestamptz(6)
+  consultation_type_id String?             @db.Uuid
+  booking_reference    String?             @unique @db.VarChar(32)
+  idempotency_key      String?             @unique @db.VarChar(64)
+  cancelled_at         DateTime?           @db.Timestamptz(6)
+  cancellation_reason  String?
+  rescheduled_from_id  String?             @db.Uuid
+  consultation_types   consultation_types? @relation(fields: [consultation_type_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  consultations        consultations?      @relation("consultationsToconsultations", fields: [rescheduled_from_id], references: [id], onUpdate: NoAction)
+  other_consultations  consultations[]     @relation("consultationsToconsultations")
+  users                users?              @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([booking_reference], map: "idx_consultations_booking_ref")
+  @@index([idempotency_key], map: "idx_consultations_idempotency")
+  @@index([pillar_interest], map: "idx_consultations_pillar")
+  @@index([slot_start], map: "idx_consultations_slot_start")
+  @@index([status], map: "idx_consultations_status")
+  @@index([consultation_type_id], map: "idx_consultations_type_id")
+  @@index([user_id], map: "idx_consultations_user_id")
+  @@index([user_id, status], map: "idx_consultations_user_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model contact_messages {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String   @db.VarChar(150)
+  email      String   @db.VarChar(255)
+  phone      String?  @db.VarChar(20)
+  subject    String?  @db.VarChar(200)
+  message    String
+  status     String   @default("NEW") @db.VarChar(30)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at(sort: Desc)], map: "idx_contact_messages_created_at")
+  @@index([email], map: "idx_contact_messages_email")
+  @@index([status], map: "idx_contact_messages_status")
+}
+
+model schema_migrations {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique @db.VarChar(255)
+  applied_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model services {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug              String   @unique @db.VarChar(150)
+  title             String   @db.VarChar(200)
+  category          String?  @db.VarChar(100)
+  short_description String
+  description       String?
+  image_url         String?
+  icon_name         String?  @db.VarChar(100)
+  offerings         Json?    @default("[]")
+  is_featured       Boolean? @default(false)
+  is_active         Boolean? @default(true)
+  display_order     Int?     @default(0)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([is_active], map: "idx_services_active")
+  @@index([category], map: "idx_services_category")
+  @@index([display_order], map: "idx_services_order")
+  @@index([slug], map: "idx_services_slug")
+}
+
+model subscribers {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                  String    @unique @db.VarChar(255)
+  consent                Boolean   @default(false)
+  subscribed_at          DateTime  @default(now()) @db.Timestamptz(6)
+  unsubscribed_at        DateTime? @db.Timestamptz(6)
+  unsubscribe_token_hash String?   @db.VarChar(255)
+  updated_at             DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([email], map: "idx_subscribers_email")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  google_id     String?         @unique @db.VarChar(255)
+  name          String          @db.VarChar(150)
+  email         String          @unique @db.VarChar(255)
+  avatar        String?
+  role          String          @default("USER") @db.VarChar(20)
+  created_at    DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime        @default(now()) @db.Timestamptz(6)
+  password_hash String?         @db.VarChar(255)
+  auth_provider String          @default("local") @db.VarChar(50)
+  is_active     Boolean         @default(true)
+  last_login_at DateTime?       @db.Timestamptz(6)
+  consultations consultations[]
+
+  @@index([auth_provider], map: "idx_users_auth_provider")
+  @@index([email], map: "idx_users_email")
+  @@index([google_id], map: "idx_users_google_id")
+  @@index([is_active], map: "idx_users_is_active")
+}

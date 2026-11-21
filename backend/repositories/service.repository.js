@@ -1,8 +1,34 @@
-import { pool } from '../config/db.js';
+import { prisma } from '../config/prisma.js';
+import { createPrismaPgAdapter } from '../config/prismaAdapter.js';
+
+const SERVICE_SELECT_FIELDS = {
+  id: true,
+  slug: true,
+  title: true,
+  category: true,
+  short_description: true,
+  description: true,
+  image_url: true,
+  icon_name: true,
+  offerings: true,
+  is_featured: true,
+  display_order: true,
+  created_at: true,
+  updated_at: true,
+};
 
 export class ServiceRepository {
-  constructor(dbPool = pool) {
-    this.pool = dbPool;
+  /**
+   * Initializes the repository with Prisma Client.
+   * If a custom client is supplied (e.g. pg-mem pool during automated tests),
+   * it adapts it to provide Prisma model delegates.
+   * @param {Object} [client=prisma] - PrismaClient instance or test adapter
+   */
+  constructor(client = prisma) {
+    this.prisma =
+      client && typeof client.query === 'function' && !client.services
+        ? createPrismaPgAdapter(client)
+        : client;
   }
 
   /**
@@ -11,43 +37,33 @@ export class ServiceRepository {
    * @returns {Promise<Array>} List of active services
    */
   async findAllActive(filters = {}) {
-    const conditions = ['is_active = TRUE'];
-    const values = [];
-    let paramIndex = 1;
+    const where = {
+      is_active: true,
+    };
 
     if (filters.category) {
-      conditions.push(`LOWER(category) = LOWER($${paramIndex++})`);
-      values.push(filters.category);
+      where.category = {
+        equals: filters.category,
+        mode: 'insensitive',
+      };
     }
 
     if (filters.featured !== undefined) {
-      conditions.push(`is_featured = $${paramIndex++}`);
-      values.push(filters.featured);
+      const isFeatured =
+        typeof filters.featured === 'string'
+          ? filters.featured.toLowerCase() === 'true'
+          : Boolean(filters.featured);
+      where.is_featured = isFeatured;
     }
 
-    const whereClause = conditions.join(' AND ');
-    const query = `
-      SELECT 
-        id, 
-        slug, 
-        title, 
-        category, 
-        short_description, 
-        description, 
-        image_url, 
-        icon_name, 
-        offerings, 
-        is_featured, 
-        display_order,
-        created_at,
-        updated_at
-      FROM services
-      WHERE ${whereClause}
-      ORDER BY display_order ASC, title ASC;
-    `;
-
-    const { rows } = await this.pool.query(query, values);
-    return rows;
+    return await this.prisma.services.findMany({
+      where,
+      select: SERVICE_SELECT_FIELDS,
+      orderBy: [
+        { display_order: 'asc' },
+        { title: 'asc' },
+      ],
+    });
   }
 
   /**
@@ -56,28 +72,20 @@ export class ServiceRepository {
    * @returns {Promise<Object|null>}
    */
   async findBySlug(slug) {
-    const query = `
-      SELECT 
-        id, 
-        slug, 
-        title, 
-        category, 
-        short_description, 
-        description, 
-        image_url, 
-        icon_name, 
-        offerings, 
-        is_featured, 
-        display_order,
-        created_at,
-        updated_at
-      FROM services
-      WHERE LOWER(slug) = LOWER($1) AND is_active = TRUE
-      LIMIT 1;
-    `;
+    if (!slug) return null;
 
-    const { rows } = await this.pool.query(query, [slug]);
-    return rows[0] || null;
+    const service = await this.prisma.services.findFirst({
+      where: {
+        slug: {
+          equals: slug,
+          mode: 'insensitive',
+        },
+        is_active: true,
+      },
+      select: SERVICE_SELECT_FIELDS,
+    });
+
+    return service || null;
   }
 }
 

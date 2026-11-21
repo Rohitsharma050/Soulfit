@@ -2,6 +2,69 @@ import { ConsultationRepository, consultationRepository as defaultRepo } from '.
 import { notificationService } from './notification.service.js';
 import { ApiError } from '../utils/ApiError.js';
 
+export const SANCTUARY_TIMEZONE = 'Asia/Kolkata';
+
+/**
+ * Normalizes minutes from midnight to HH:MM format
+ */
+export function formatMinutesToTimeStr(minutes) {
+  const h = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const m = String(minutes % 60).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+/**
+ * Extracts date and wall-clock time components in the specified timezone (default Asia/Kolkata).
+ * Operates purely via Intl.DateTimeFormat to avoid any dependence on server local timezone.
+ */
+export function getSanctuaryDateTimeParts(date, timeZone = SANCTUARY_TIMEZONE) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return null;
+
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  const parts = formatter.formatToParts(d);
+  const partMap = {};
+  for (const p of parts) {
+    if (p.type !== 'literal') {
+      partMap[p.type] = p.value;
+    }
+  }
+
+  const year = parseInt(partMap.year, 10);
+  const month = parseInt(partMap.month, 10);
+  const day = parseInt(partMap.day, 10);
+  const hour = parseInt(partMap.hour, 10);
+  const minute = parseInt(partMap.minute, 10);
+  const second = parseInt(partMap.second, 10);
+
+  const dateStr = `${partMap.year}-${partMap.month}-${partMap.day}`;
+  const minutesFromMidnight = hour * 60 + minute;
+  // Day of week in target timezone (0 = Sunday, 1 = Monday, ... 6 = Saturday)
+  const dayOfWeek = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)).getUTCDay();
+
+  return {
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    dateStr,
+    minutesFromMidnight,
+    dayOfWeek,
+  };
+}
+
 export class ConsultationService {
   constructor(repository = defaultRepo, notifier = notificationService) {
     this.repository = repository;
@@ -66,6 +129,111 @@ export class ConsultationService {
       start: new Date(startIso),
       end: new Date(endIso),
     };
+  }
+
+  /**
+   * Reusable server-side slot validator enforcing sanctuary calendar boundaries,
+   * operating hours, and consultation type invariants.
+   *
+   * @param {Object} params
+   * @param {Date|string} params.start - Slot start timestamp
+   * @param {Date|string} params.end - Slot end timestamp
+   * @param {Object} params.consultationType - Consultation type record
+   * @param {string} [params.timeZone] - Timezone (evaluated in Asia/Kolkata for sanctuary rules)
+   */
+  async validateSlotWithinSanctuaryRules({
+    start,
+    end,
+    consultationType,
+    timeZone = this.defaultTimezone,
+  }) {
+    const startDate = start instanceof Date ? start : new Date(start);
+    const endDate = end instanceof Date ? end : new Date(end);
+
+    // 1. Start and end timestamps are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw ApiError.badRequest('Invalid consultation slot timestamp.');
+    }
+
+    // 2. Start is strictly before end
+    if (startDate.getTime() >= endDate.getTime()) {
+      throw ApiError.badRequest('Slot start time must be strictly before slot end time.');
+    }
+
+    // Explicit sanctuary timezone conversion (Asia/Kolkata)
+    const startParts = getSanctuaryDateTimeParts(startDate, SANCTUARY_TIMEZONE);
+    const endParts = getSanctuaryDateTimeParts(endDate, SANCTUARY_TIMEZONE);
+
+    if (!startParts || !endParts) {
+      throw ApiError.badRequest('Failed to parse slot timestamps in sanctuary timezone.');
+    }
+
+    // 3. Both timestamps belong to the same sanctuary calendar date in Asia/Kolkata
+    if (startParts.dateStr !== endParts.dateStr) {
+      throw ApiError.badRequest('Consultation slot cannot cross calendar day boundaries.');
+    }
+
+    // 6. The slot duration matches the applicable consultation type duration
+    if (consultationType?.duration_minutes) {
+      const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / (60 * 1000));
+      if (durationMinutes !== consultationType.duration_minutes) {
+        throw ApiError.badRequest(
+          `Selected slot duration of ${durationMinutes} minutes does not match required duration of ${consultationType.duration_minutes} minutes.`
+        );
+      }
+    }
+
+    const dateStr = startParts.dateStr;
+    const dayOfWeek = startParts.dayOfWeek;
+
+    // Check date overrides (holidays / custom working hours)
+    const overrides = await this.repository.getAvailabilityOverrides(dateStr, dateStr, consultationType?.id || null);
+    const override = overrides[0] || null;
+
+    if (override && !override.is_available) {
+      throw ApiError.badRequest(override.reason || 'Sanctuary is closed on this date.');
+    }
+
+    // Check weekly availability rules
+    const rules = await this.repository.getAvailabilityRules(consultationType?.id || null);
+    const rule = rules.find((r) => r.day_of_week === dayOfWeek) || null;
+
+    if (!rule || !rule.is_active) {
+      throw ApiError.badRequest('No scheduled availability on this day of the week.');
+    }
+
+    // Effective working hours from availability configuration
+    const startTimeStr = override?.start_time || rule.start_time;
+    const endTimeStr = override?.end_time || rule.end_time;
+
+    const openMinutes = this.timeStrToMinutes(startTimeStr);
+    const closeMinutes = this.timeStrToMinutes(endTimeStr);
+
+    const slotStartMinutes = startParts.minutesFromMidnight;
+    const slotEndMinutes = endParts.minutesFromMidnight;
+
+    // 4. The slot starts no earlier than the configured opening time
+    if (slotStartMinutes < openMinutes) {
+      throw ApiError.badRequest(
+        `Selected slot start time (${formatMinutesToTimeStr(slotStartMinutes)}) is earlier than sanctuary opening time (${startTimeStr.slice(0, 5)}).`
+      );
+    }
+
+    // 5. The slot ends no later than the configured closing time
+    if (slotEndMinutes > closeMinutes) {
+      throw ApiError.badRequest(
+        `Selected slot end time (${formatMinutesToTimeStr(slotEndMinutes)}) is later than sanctuary closing time (${endTimeStr.slice(0, 5)}).`
+      );
+    }
+
+    return true;
+  }
+
+  /**
+   * Alias for validateSlotWithinSanctuaryRules
+   */
+  async validateSlot(params) {
+    return this.validateSlotWithinSanctuaryRules(params);
   }
 
   /**
@@ -284,6 +452,14 @@ export class ConsultationService {
     const duration = consultationType.duration_minutes;
     const end = new Date(start.getTime() + duration * 60 * 1000);
 
+    // Validate proposed slot against sanctuary calendar boundaries and operating hours
+    await this.validateSlotWithinSanctuaryRules({
+      start,
+      end,
+      consultationType,
+      timeZone,
+    });
+
     // Extract YYYY-MM-DD in Asia/Kolkata for advisory lock
     const targetDateStr = start.toLocaleDateString('en-CA', { timeZone });
 
@@ -436,6 +612,19 @@ export class ConsultationService {
 
     const duration = booking.type_duration_minutes || 60;
     const newEnd = new Date(newStart.getTime() + duration * 60 * 1000);
+
+    const consultationType = booking.consultation_type_id
+      ? await this.getTypeByIdOrSlug(booking.consultation_type_id)
+      : { id: null, duration_minutes: duration };
+
+    // Validate proposed target slot against sanctuary calendar boundaries and operating hours
+    await this.validateSlotWithinSanctuaryRules({
+      start: newStart,
+      end: newEnd,
+      consultationType,
+      timeZone,
+    });
+
     const targetDateStr = newStart.toLocaleDateString('en-CA', { timeZone });
 
     const updated = await this.repository.rescheduleBooking({

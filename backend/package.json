@@ -15,6 +15,7 @@
     "test": "node --test tests/**/*.test.js"
   },
   "dependencies": {
+    "@prisma/client": "6.4.1",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "nodemon": "^3.1.9",
     "pg-mem": "^3.0.4",
+    "prisma": "6.4.1",
     "supertest": "^7.0.0"
   }
 }
